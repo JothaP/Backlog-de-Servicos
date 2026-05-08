@@ -410,9 +410,7 @@ function processarDados(data) {
     data: {
 
       labels:
-        categorias.map((cat, index) =>
-          `${cat}`
-        ),
+        categorias.map((cat) => `${cat}`),
 
       datasets: [{
 
@@ -469,6 +467,42 @@ function processarDados(data) {
         y: {
 
           beginAtZero: true
+        }
+      },
+
+      animation: {
+
+        onComplete: function() {
+
+          const chart = this.chart;
+
+          const ctx = chart.ctx;
+
+          ctx.font = "bold 12px Arial";
+
+          ctx.textAlign = "center";
+
+          ctx.textBaseline = "bottom";
+
+          this.data.datasets.forEach((dataset, i) => {
+
+            const meta =
+              chart.getDatasetMeta(i);
+
+            meta.data.forEach((bar, index) => {
+
+              const valor =
+                dataset.data[index];
+
+              ctx.fillStyle = "#111827";
+
+              ctx.fillText(
+                valor,
+                bar.x,
+                bar.y - 5
+              );
+            });
+          });
         }
       }
     }
