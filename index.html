@@ -2,10 +2,17 @@
 <html lang="pt-br">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <title>Dashboard Operacional - Backlog</title>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    Dashboard Operacional - Backlog
+  </title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -18,15 +25,20 @@
     body{
       margin:0;
       padding:20px;
-      font-family:Arial, sans-serif;
+      font-family:Arial,sans-serif;
       background:#0f172a;
       color:#f8fafc;
+      transition:0.3s;
+    }
+
+    body.light-mode{
+      background:#eef2f7;
+      color:#111827;
     }
 
     h1{
       text-align:center;
       margin-bottom:30px;
-      color:#f8fafc;
     }
 
     .container{
@@ -34,9 +46,34 @@
       margin:auto;
     }
 
+    .dashboard{
+      display:grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(450px,1fr));
+      gap:20px;
+    }
+
+    .card{
+      background:#1e293b;
+      border-radius:14px;
+      padding:20px;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.35);
+      transition:0.3s;
+    }
+
+    body.light-mode .card{
+      background:white;
+    }
+
+    .card h3{
+      margin-top:0;
+    }
+
     .kpis{
       display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      grid-template-columns:
+        repeat(auto-fit,minmax(220px,1fr));
       gap:20px;
       margin-bottom:20px;
     }
@@ -46,7 +83,13 @@
       border-radius:14px;
       padding:20px;
       text-align:center;
-      box-shadow:0 2px 10px rgba(0,0,0,0.35);
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.35);
+      transition:0.3s;
+    }
+
+    body.light-mode .kpi-card{
+      background:white;
     }
 
     .kpi-title{
@@ -55,28 +98,13 @@
       margin-bottom:10px;
     }
 
+    body.light-mode .kpi-title{
+      color:#6b7280;
+    }
+
     .kpi-value{
       font-size:30px;
       font-weight:bold;
-      color:#f8fafc;
-    }
-
-    .dashboard{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(450px,1fr));
-      gap:20px;
-    }
-
-    .card{
-      background:#1e293b;
-      border-radius:14px;
-      padding:20px;
-      box-shadow:0 2px 10px rgba(0,0,0,0.35);
-    }
-
-    .card h3{
-      margin-top:0;
-      color:#f8fafc;
     }
 
     canvas{
@@ -89,6 +117,10 @@
       margin-top:40px;
       color:#94a3b8;
       font-size:14px;
+    }
+
+    body.light-mode footer{
+      color:#6b7280;
     }
 
     .filtro-container{
@@ -112,35 +144,106 @@
       opacity:0.85;
     }
 
+    .theme-toggle{
+      position:fixed;
+      top:20px;
+      right:20px;
+      border:none;
+      border-radius:10px;
+      padding:12px 16px;
+      cursor:pointer;
+      font-weight:bold;
+      z-index:999;
+      background:white;
+      color:#111827;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.25);
+    }
+
   </style>
+
 </head>
 
 <body>
 
+<button
+  id="themeToggle"
+  class="theme-toggle">
+
+  ☀️ Tema Claro
+
+</button>
+
 <div class="container">
 
-  <h1>Dashboard Operacional - Backlog por Categoria</h1>
+  <h1>
+    Dashboard Operacional - Backlog
+  </h1>
 
   <div class="kpis">
 
     <div class="kpi-card">
-      <div class="kpi-title">Média Geral</div>
-      <div class="kpi-value" id="mediaOS">-</div>
+
+      <div class="kpi-title">
+        Média Geral
+      </div>
+
+      <div
+        class="kpi-value"
+        id="mediaOS">
+
+        -
+
+      </div>
+
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-title">Maior Backlog</div>
-      <div class="kpi-value" id="maxOS">-</div>
+
+      <div class="kpi-title">
+        Maior Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="maxOS">
+
+        -
+
+      </div>
+
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-title">Menor Backlog</div>
-      <div class="kpi-value" id="minOS">-</div>
+
+      <div class="kpi-title">
+        Menor Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="minOS">
+
+        -
+
+      </div>
+
     </div>
 
     <div class="kpi-card">
-      <div class="kpi-title">Categoria Crítica</div>
-      <div class="kpi-value" id="categoriaCritica">-</div>
+
+      <div class="kpi-title">
+        Categoria Crítica
+      </div>
+
+      <div
+        class="kpi-value"
+        id="categoriaCritica">
+
+        -
+
+      </div>
+
     </div>
 
   </div>
@@ -148,18 +251,32 @@
   <div class="dashboard">
 
     <div class="card">
-      <h3>Evolução do Backlog Total</h3>
+
+      <h3>
+        Evolução do Backlog Total
+      </h3>
+
       <canvas id="backlogChart"></canvas>
+
     </div>
 
     <div class="card">
-      <h3>Distribuição por Categoria</h3>
+
+      <h3>
+        Distribuição por Categoria
+      </h3>
+
       <canvas id="pizzaChart"></canvas>
+
     </div>
 
-    <div class="card" style="grid-column:span 2;">
+    <div
+      class="card"
+      style="grid-column:span 2;">
 
-      <h3>Evolução por Categoria</h3>
+      <h3>
+        Evolução por Categoria
+      </h3>
 
       <div
         class="filtro-container"
@@ -175,7 +292,9 @@
 </div>
 
 <footer>
+
 Dashboard conectado ao Google Sheets
+
 </footer>
 
 <script>
@@ -187,7 +306,18 @@ let backlogChart;
 let pizzaChart;
 let categoriaChart;
 
+let dadosGlobais = [];
+
+let darkMode = true;
+
+let corTexto =
+  "#f8fafc";
+
+let corGrid =
+  "rgba(255,255,255,0.1)";
+
 const cores = [
+
   "#3b82f6",
   "#ef4444",
   "#22c55e",
@@ -198,17 +328,17 @@ const cores = [
   "#94a3b8"
 ];
 
-const corTexto = "#f8fafc";
-const corGrid = "rgba(255,255,255,0.1)";
-
 async function carregarGoogleSheets(){
 
   try{
 
     const sheetIdMatch =
-      GOOGLE_SHEETS_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      GOOGLE_SHEETS_URL.match(
+        /\/d\/([a-zA-Z0-9-_]+)/
+      );
 
-    const sheetId = sheetIdMatch[1];
+    const sheetId =
+      sheetIdMatch[1];
 
     const exportUrl =
       `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
@@ -220,42 +350,59 @@ async function carregarGoogleSheets(){
       await response.text();
 
     const json =
-      JSON.parse(text.substr(47).slice(0,-2));
+      JSON.parse(
+        text.substr(47).slice(0,-2)
+      );
 
     const rows =
       json.table.rows.map(r =>
-        r.c.map(c => c ? c.v : '')
+        r.c.map(c =>
+          c ? c.v : ''
+        )
       );
 
     const headers =
-      json.table.cols.map(c => c.label);
+      json.table.cols.map(c =>
+        c.label
+      );
 
-    processarDados([headers,...rows]);
+    processarDados(
+      [headers,...rows]
+    );
 
   }catch(error){
 
     console.error(error);
 
-    alert("Erro ao carregar Google Sheets");
+    alert(
+      "Erro ao carregar Google Sheets"
+    );
   }
 }
 
 function destruirGraficos(){
 
-  if(backlogChart) backlogChart.destroy();
+  if(backlogChart)
+    backlogChart.destroy();
 
-  if(pizzaChart) pizzaChart.destroy();
+  if(pizzaChart)
+    pizzaChart.destroy();
 
-  if(categoriaChart) categoriaChart.destroy();
+  if(categoriaChart)
+    categoriaChart.destroy();
 }
 
 function processarDados(data){
 
+  dadosGlobais = data;
+
   destruirGraficos();
 
-  const headers = data[0];
+  const headers =
+    data[0];
 
-  const rows = data.slice(1);
+  const rows =
+    data.slice(1);
 
   const periodos =
     rows.map(r => r[0]);
@@ -275,7 +422,9 @@ function processarDados(data){
         Number(row[index + 1]) || 0;
     });
 
-    totaisPeriodo.push(totalLinha);
+    totaisPeriodo.push(
+      totalLinha
+    );
   });
 
   const ultimaLinha =
@@ -283,12 +432,17 @@ function processarDados(data){
 
   const backlogAtual =
     categorias.map((cat,index)=>
-      Number(ultimaLinha[index + 1]) || 0
+
+      Number(
+        ultimaLinha[index + 1]
+      ) || 0
     );
 
   const media =
     (
-      totaisPeriodo.reduce((a,b)=>a+b,0)
+      totaisPeriodo.reduce(
+        (a,b)=>a+b,0
+      )
       /
       totaisPeriodo.length
     ).toFixed(1);
@@ -304,30 +458,44 @@ function processarDados(data){
       Math.max(...backlogAtual)
     );
 
-  document.getElementById("mediaOS")
+  document
+    .getElementById("mediaOS")
     .innerText = media;
 
-  document.getElementById("maxOS")
+  document
+    .getElementById("maxOS")
     .innerText = max;
 
-  document.getElementById("minOS")
+  document
+    .getElementById("minOS")
     .innerText = min;
 
-  document.getElementById("categoriaCritica")
+  document
+    .getElementById(
+      "categoriaCritica"
+    )
     .innerText =
       categorias[indiceMaior];
 
   // BACKLOG TOTAL
 
-  backlogChart = new Chart(
-    document.getElementById("backlogChart"),
-    {
+  backlogChart =
+    new Chart(
+
+      document.getElementById(
+        "backlogChart"
+      ),
+
+      {
+
       type:"line",
 
       data:{
+
         labels:periodos,
 
         datasets:[{
+
           label:"Total de OS",
 
           data:totaisPeriodo,
@@ -349,7 +517,9 @@ function processarDados(data){
         maintainAspectRatio:false,
 
         plugins:{
+
           legend:{
+
             labels:{
               color:corTexto
             }
@@ -359,6 +529,7 @@ function processarDados(data){
         scales:{
 
           x:{
+
             ticks:{
               color:corTexto
             },
@@ -369,6 +540,7 @@ function processarDados(data){
           },
 
           y:{
+
             ticks:{
               color:corTexto
             },
@@ -379,19 +551,22 @@ function processarDados(data){
           }
         }
       }
-    }
-  );
+    });
 
   // EVOLUÇÃO POR CATEGORIA
 
   const datasetsCategorias =
+
     categorias.map((cat,index)=>({
 
       label:cat,
 
       data:
         rows.map(r =>
-          Number(r[index + 1]) || 0
+
+          Number(
+            r[index + 1]
+          ) || 0
         ),
 
       borderColor:
@@ -407,13 +582,21 @@ function processarDados(data){
       hidden:false
     }));
 
-  categoriaChart = new Chart(
-    document.getElementById("categoriaChart"),
-    {
+  categoriaChart =
+    new Chart(
+
+      document.getElementById(
+        "categoriaChart"
+      ),
+
+      {
+
       type:"line",
 
       data:{
+
         labels:periodos,
+
         datasets:datasetsCategorias
       },
 
@@ -424,12 +607,16 @@ function processarDados(data){
         maintainAspectRatio:false,
 
         interaction:{
+
           mode:"index",
+
           intersect:false
         },
 
         plugins:{
+
           legend:{
+
             position:"bottom",
 
             labels:{
@@ -441,6 +628,7 @@ function processarDados(data){
         scales:{
 
           x:{
+
             ticks:{
               color:corTexto
             },
@@ -451,6 +639,7 @@ function processarDados(data){
           },
 
           y:{
+
             ticks:{
               color:corTexto
             },
@@ -461,18 +650,21 @@ function processarDados(data){
           }
         }
       }
-    }
-  );
+    });
 
-  // FILTROS
-
-  criarFiltros(categorias);
+  criarFiltros();
 
   // DISTRIBUIÇÃO
 
-  pizzaChart = new Chart(
-    document.getElementById("pizzaChart"),
-    {
+  pizzaChart =
+    new Chart(
+
+      document.getElementById(
+        "pizzaChart"
+      ),
+
+      {
+
       type:"bar",
 
       data:{
@@ -482,13 +674,17 @@ function processarDados(data){
 
         datasets:[{
 
-          label:"Quantidade de OS",
+          label:
+            "Quantidade de OS",
 
           data:backlogAtual,
 
           backgroundColor:
             categorias.map((_,index)=>
-              cores[index % cores.length]
+
+              cores[
+                index % cores.length
+              ]
             ),
 
           borderRadius:6
@@ -505,35 +701,13 @@ function processarDados(data){
 
           legend:{
             display:false
-          },
-
-          tooltip:{
-
-            callbacks:{
-
-              label:function(context){
-
-                const total =
-                  context.dataset.data
-                    .reduce((a,b)=>a+b,0);
-
-                const valor =
-                  context.raw;
-
-                const percentual =
-                  (
-                    (valor / total) * 100
-                  ).toFixed(1);
-
-                return `${valor} OS (${percentual}%)`;
-              }
-            }
           }
         },
 
         scales:{
 
           x:{
+
             ticks:{
               color:corTexto
             },
@@ -544,6 +718,7 @@ function processarDados(data){
           },
 
           y:{
+
             beginAtZero:true,
 
             ticks:{
@@ -599,11 +774,10 @@ function processarDados(data){
           }
         }
       }
-    }
-  );
+    });
 }
 
-function criarFiltros(categorias){
+function criarFiltros(){
 
   const container =
     document.getElementById(
@@ -612,46 +786,98 @@ function criarFiltros(categorias){
 
   container.innerHTML = "";
 
-  categorias.forEach((categoria,index)=>{
+  categoriaChart
+    .data
+    .datasets
+    .forEach((dataset,index)=>{
 
-    const botao =
-      document.createElement("button");
+      const botao =
+        document.createElement(
+          "button"
+        );
 
-    botao.innerText =
-      categoria;
+      botao.innerText =
+        dataset.label;
 
-    botao.classList.add(
-      "filtro-btn"
-    );
+      botao.classList.add(
+        "filtro-btn"
+      );
 
-    botao.style.backgroundColor =
-      cores[index % cores.length];
+      botao.style.backgroundColor =
+        cores[index % cores.length];
 
-    botao.onclick = function(){
+      botao.style.opacity = "1";
 
-      const dataset =
-        categoriaChart
-          .data
-          .datasets[index];
+      botao.onclick = () => {
 
-      dataset.hidden =
-        !dataset.hidden;
+        dataset.hidden =
+          !dataset.hidden;
 
-      categoriaChart.update();
+        categoriaChart.update();
 
-      if(dataset.hidden){
+        botao.style.opacity =
+          dataset.hidden
+            ? "0.35"
+            : "1";
+      };
 
-        botao.style.opacity = "0.35";
-
-      }else{
-
-        botao.style.opacity = "1";
-      }
-    };
-
-    container.appendChild(botao);
-  });
+      container.appendChild(
+        botao
+      );
+    });
 }
+
+document
+  .getElementById(
+    "themeToggle"
+  )
+  .addEventListener(
+    "click",
+    ()=>{
+
+    darkMode =
+      !darkMode;
+
+    document.body
+      .classList.toggle(
+        "light-mode"
+      );
+
+    if(darkMode){
+
+      corTexto =
+        "#f8fafc";
+
+      corGrid =
+        "rgba(255,255,255,0.1)";
+
+      document
+        .getElementById(
+          "themeToggle"
+        )
+        .innerText =
+          "☀️ Tema Claro";
+
+    }else{
+
+      corTexto =
+        "#111827";
+
+      corGrid =
+        "rgba(0,0,0,0.1)";
+
+      document
+        .getElementById(
+          "themeToggle"
+        )
+        .innerText =
+          "🌙 Tema Escuro";
+    }
+
+    processarDados(
+      dadosGlobais
+    );
+  });
 
 carregarGoogleSheets();
 
