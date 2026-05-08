@@ -9,6 +9,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
+
     * {
       box-sizing: border-box;
     }
@@ -82,6 +83,34 @@
       color: #6b7280;
       font-size: 14px;
     }
+
+    .filtro-container {
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .filtro-btn {
+      padding: 10px 14px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #d1d5db;
+      color: #111827;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .filtro-btn:hover {
+      opacity: 0.9;
+    }
+
+    .filtro-btn.ativo {
+      background: #2563eb;
+      color: white;
+    }
+
   </style>
 </head>
 
@@ -123,13 +152,19 @@
     </div>
 
     <div class="card">
-      <h3>Distribuição por Categoria</h3>
+      <h3>Distribuição Atual por Categoria</h3>
       <canvas id="pizzaChart"></canvas>
     </div>
 
     <div class="card" style="grid-column: span 2;">
+
       <h3>Evolução por Categoria</h3>
+
+      <div class="filtro-container" id="filtrosCategorias">
+      </div>
+
       <canvas id="categoriaChart"></canvas>
+
     </div>
 
   </div>
@@ -143,11 +178,13 @@ Dashboard conectado ao Google Sheets
 <script>
 
 const GOOGLE_SHEETS_URL =
-"https://docs.google.com/spreadsheets/d/1W2eGwBdt8ygTBXj3vKDPzqwpeQHYN6KmlPkHQONP88k/edit?gid=0#gid=0";
+"https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit";
 
 let backlogChart;
 let pizzaChart;
 let categoriaChart;
+
+let datasetsOriginais = [];
 
 const cores = [
   "#2563eb",
@@ -164,7 +201,8 @@ async function carregarGoogleSheets() {
 
   try {
 
-    const sheetIdMatch = GOOGLE_SHEETS_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
+    const sheetIdMatch =
+      GOOGLE_SHEETS_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
 
     const sheetId = sheetIdMatch[1];
 
@@ -175,13 +213,15 @@ async function carregarGoogleSheets() {
 
     const text = await response.text();
 
-    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const json =
+      JSON.parse(text.substr(47).slice(0, -2));
 
     const rows = json.table.rows.map(r =>
       r.c.map(c => c ? c.v : '')
     );
 
-    const headers = json.table.cols.map(c => c.label);
+    const headers =
+      json.table.cols.map(c => c.label);
 
     const data = [headers, ...rows];
 
@@ -198,7 +238,9 @@ async function carregarGoogleSheets() {
 function destruirGraficos() {
 
   if (backlogChart) backlogChart.destroy();
+
   if (pizzaChart) pizzaChart.destroy();
+
   if (categoriaChart) categoriaChart.destroy();
 }
 
@@ -207,6 +249,7 @@ function processarDados(data) {
   destruirGraficos();
 
   const headers = data[0];
+
   const rows = data.slice(1);
 
   const periodos = rows.map(r => r[0]);
@@ -215,107 +258,141 @@ function processarDados(data) {
 
   const totaisPeriodo = [];
 
-  const totaisCategoria = {};
-
-  categorias.forEach(cat => totaisCategoria[cat] = 0);
-
   rows.forEach(row => {
 
     let totalLinha = 0;
 
     categorias.forEach((cat, index) => {
 
-      const valor = Number(row[index + 1]) || 0;
-
-      totalLinha += valor;
-
-      totaisCategoria[cat] += valor;
+      totalLinha += Number(row[index + 1]) || 0;
     });
 
     totaisPeriodo.push(totalLinha);
   });
 
-  // KPIs
+  const ultimaLinha = rows[rows.length - 1];
+
+  const backlogAtual =
+    categorias.map((cat, index) =>
+      Number(ultimaLinha[index + 1]) || 0
+    );
 
   const media =
-    (totaisPeriodo.reduce((a,b) => a+b,0) / totaisPeriodo.length).toFixed(1);
+    (totaisPeriodo.reduce((a,b)=>a+b,0)
+      / totaisPeriodo.length).toFixed(1);
 
   const max = Math.max(...totaisPeriodo);
 
   const min = Math.min(...totaisPeriodo);
 
+  const indiceMaior =
+    backlogAtual.indexOf(Math.max(...backlogAtual));
+
   const categoriaCritica =
-    Object.keys(totaisCategoria)
-      .reduce((a,b) =>
-        totaisCategoria[a] > totaisCategoria[b] ? a : b);
+    categorias[indiceMaior];
 
-  document.getElementById("mediaOS").innerText = media;
+  document.getElementById("mediaOS").innerText =
+    media;
 
-  document.getElementById("maxOS").innerText = max;
+  document.getElementById("maxOS").innerText =
+    max;
 
-  document.getElementById("minOS").innerText = min;
+  document.getElementById("minOS").innerText =
+    min;
 
   document.getElementById("categoriaCritica").innerText =
     categoriaCritica;
 
-  // Evolução Backlog
+  // Backlog total
 
   backlogChart = new Chart(
     document.getElementById("backlogChart"),
     {
       type: "line",
+
       data: {
+
         labels: periodos,
+
         datasets: [{
+
           label: "Total de OS",
+
           data: totaisPeriodo,
+
           borderColor: "#2563eb",
+
           backgroundColor: "#2563eb",
+
           borderWidth: 3,
+
           tension: 0.3
         }]
       },
+
       options: {
+
         responsive: true,
+
         maintainAspectRatio: false
       }
     }
   );
 
-  // Evolução por Categoria
+  // Dataset categorias
 
-  const datasetsCategorias = categorias.map((cat, index) => ({
+  datasetsOriginais =
+    categorias.map((cat, index) => ({
 
-    label: cat,
+      label: cat,
 
-    data: rows.map(r => Number(r[index + 1]) || 0),
+      data:
+        rows.map(r =>
+          Number(r[index + 1]) || 0
+        ),
 
-    borderColor: cores[index % cores.length],
+      borderColor:
+        cores[index % cores.length],
 
-    backgroundColor: cores[index % cores.length],
+      backgroundColor:
+        cores[index % cores.length],
 
-    borderWidth: 2,
+      borderWidth: 2,
 
-    tension: 0.3
-  }));
+      tension: 0.3,
+
+      hidden: false
+    }));
 
   categoriaChart = new Chart(
     document.getElementById("categoriaChart"),
     {
       type: "line",
+
       data: {
+
         labels: periodos,
-        datasets: datasetsCategorias
+
+        datasets: datasetsOriginais
       },
+
       options: {
+
         responsive: true,
+
         maintainAspectRatio: false,
+
         interaction: {
+
           mode: "index",
+
           intersect: false
         },
+
         plugins: {
+
           legend: {
+
             position: "bottom"
           }
         }
@@ -323,28 +400,126 @@ function processarDados(data) {
     }
   );
 
-  // Pizza usando MESMAS cores
+  // Pizza
 
   pizzaChart = new Chart(
     document.getElementById("pizzaChart"),
     {
       type: "pie",
+
       data: {
-        labels: categorias,
+
+        labels:
+          categorias.map((cat, index) =>
+            `${cat} (${backlogAtual[index]})`
+          ),
+
         datasets: [{
-          data: categorias.map(cat => totaisCategoria[cat]),
+
+          data: backlogAtual,
+
           backgroundColor:
             categorias.map((_, index) =>
               cores[index % cores.length]
             )
         }]
       },
+
       options: {
+
         responsive: true,
-        maintainAspectRatio: false
+
+        maintainAspectRatio: false,
+
+        plugins: {
+
+          legend: {
+
+            position: "bottom",
+
+            labels: {
+
+              font: {
+
+                size: 12
+              },
+
+              padding: 20
+            }
+          },
+
+          tooltip: {
+
+            callbacks: {
+
+              label: function(context) {
+
+                const total =
+                  context.dataset.data
+                    .reduce((a,b)=>a+b,0);
+
+                const valor = context.raw;
+
+                const percentual =
+                  ((valor / total) * 100)
+                    .toFixed(1);
+
+                return `${context.label}: ${percentual}%`;
+              }
+            }
+          }
+        }
       }
     }
   );
+
+  criarFiltros(categorias);
+}
+
+function criarFiltros(categorias) {
+
+  const container =
+    document.getElementById("filtrosCategorias");
+
+  container.innerHTML = "";
+
+  categorias.forEach((categoria, index) => {
+
+    const botao =
+      document.createElement("button");
+
+    botao.innerText = categoria;
+
+    botao.classList.add("filtro-btn", "ativo");
+
+    botao.style.backgroundColor =
+      cores[index % cores.length];
+
+    botao.style.color = "white";
+
+    botao.onclick = function() {
+
+      const dataset =
+        categoriaChart.data.datasets[index];
+
+      dataset.hidden = !dataset.hidden;
+
+      categoriaChart.update();
+
+      botao.classList.toggle("ativo");
+
+      if (dataset.hidden) {
+
+        botao.style.opacity = "0.4";
+
+      } else {
+
+        botao.style.opacity = "1";
+      }
+    };
+
+    container.appendChild(botao);
+  });
 }
 
 carregarGoogleSheets();
