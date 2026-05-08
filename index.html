@@ -16,14 +16,15 @@
 
     body {
       font-family: Arial, sans-serif;
-      background: #eef2f7;
+      background: #0f172a;
+      color: #f1f5f9;
       margin: 0;
       padding: 20px;
     }
 
     h1 {
       text-align: center;
-      color: #111827;
+      color: #f8fafc;
       margin-bottom: 30px;
     }
 
@@ -39,10 +40,14 @@
     }
 
     .card {
-      background: white;
+      background: #1e293b;
       border-radius: 14px;
       padding: 20px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+
+    .card h3 {
+      color: #f8fafc;
     }
 
     .kpis {
@@ -53,15 +58,15 @@
     }
 
     .kpi-card {
-      background: white;
+      background: #1e293b;
       border-radius: 14px;
       padding: 20px;
       text-align: center;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.4);
     }
 
     .kpi-title {
-      color: #6b7280;
+      color: #94a3b8;
       font-size: 14px;
       margin-bottom: 10px;
     }
@@ -69,7 +74,7 @@
     .kpi-value {
       font-size: 30px;
       font-weight: bold;
-      color: #111827;
+      color: #f8fafc;
     }
 
     canvas {
@@ -80,7 +85,7 @@
     footer {
       text-align: center;
       margin-top: 40px;
-      color: #6b7280;
+      color: #94a3b8;
       font-size: 14px;
     }
 
@@ -96,19 +101,13 @@
       border: none;
       border-radius: 8px;
       cursor: pointer;
-      background: #d1d5db;
-      color: #111827;
+      color: white;
       font-size: 14px;
       transition: 0.2s;
     }
 
     .filtro-btn:hover {
       opacity: 0.9;
-    }
-
-    .filtro-btn.ativo {
-      background: #2563eb;
-      color: white;
     }
 
   </style>
@@ -178,7 +177,7 @@ Dashboard conectado ao Google Sheets
 <script>
 
 const GOOGLE_SHEETS_URL =
-"https://docs.google.com/spreadsheets/d/1W2eGwBdt8ygTBXj3vKDPzqwpeQHYN6KmlPkHQONP88k/edit?gid=0#gid=0";
+"https://docs.google.com/spreadsheets/d/SEU_ID_AQUI/edit";
 
 let backlogChart;
 let pizzaChart;
@@ -187,15 +186,18 @@ let categoriaChart;
 let datasetsOriginais = [];
 
 const cores = [
-  "#2563eb",
-  "#dc2626",
-  "#16a34a",
-  "#ca8a04",
-  "#9333ea",
-  "#0891b2",
-  "#ea580c",
-  "#4b5563"
+  "#3b82f6",
+  "#ef4444",
+  "#22c55e",
+  "#eab308",
+  "#a855f7",
+  "#06b6d4",
+  "#f97316",
+  "#94a3b8"
 ];
+
+const corTexto = "#f8fafc";
+const corGrid = "rgba(255,255,255,0.1)";
 
 async function carregarGoogleSheets() {
 
@@ -303,7 +305,7 @@ function processarDados(data) {
   document.getElementById("categoriaCritica").innerText =
     categoriaCritica;
 
-  // Backlog total
+  // Evolução backlog total
 
   backlogChart = new Chart(
     document.getElementById("backlogChart"),
@@ -320,9 +322,9 @@ function processarDados(data) {
 
           data: totaisPeriodo,
 
-          borderColor: "#2563eb",
+          borderColor: "#3b82f6",
 
-          backgroundColor: "#2563eb",
+          backgroundColor: "#3b82f6",
 
           borderWidth: 3,
 
@@ -334,12 +336,52 @@ function processarDados(data) {
 
         responsive: true,
 
-        maintainAspectRatio: false
+        maintainAspectRatio: false,
+
+        plugins: {
+
+          legend: {
+
+            labels: {
+
+              color: corTexto
+            }
+          }
+        },
+
+        scales: {
+
+          x: {
+
+            ticks: {
+
+              color: corTexto
+            },
+
+            grid: {
+
+              color: corGrid
+            }
+          },
+
+          y: {
+
+            ticks: {
+
+              color: corTexto
+            },
+
+            grid: {
+
+              color: corGrid
+            }
+          }
+        }
       }
     }
   );
 
-  // Dataset categorias
+  // Evolução categorias
 
   datasetsOriginais =
     categorias.map((cat, index) => ({
@@ -393,121 +435,178 @@ function processarDados(data) {
 
           legend: {
 
-            position: "bottom"
+            position: "bottom",
+
+            labels: {
+
+              color: corTexto
+            }
+          }
+        },
+
+        scales: {
+
+          x: {
+
+            ticks: {
+
+              color: corTexto
+            },
+
+            grid: {
+
+              color: corGrid
+            }
+          },
+
+          y: {
+
+            ticks: {
+
+              color: corTexto
+            },
+
+            grid: {
+
+              color: corGrid
+            }
           }
         }
       }
     }
   );
 
-  // Pizza
+  // Distribuição categorias
 
   pizzaChart = new Chart(
-  document.getElementById("pizzaChart"),
-  {
-    type: "bar",
+    document.getElementById("pizzaChart"),
+    {
+      type: "bar",
 
-    data: {
+      data: {
 
-      labels:
-        categorias.map((cat) => `${cat}`),
+        labels:
+          categorias.map((cat) => `${cat}`),
 
-      datasets: [{
+        datasets: [{
 
-        label: "Quantidade de OS",
+          label: "Quantidade de OS",
 
-        data: backlogAtual,
+          data: backlogAtual,
 
-        backgroundColor:
-          categorias.map((_, index) =>
-            cores[index % cores.length]
-          ),
+          backgroundColor:
+            categorias.map((_, index) =>
+              cores[index % cores.length]
+            ),
 
-        borderRadius: 6
-      }]
-    },
+          borderRadius: 6
+        }]
+      },
 
-    options: {
+      options: {
 
-      responsive: true,
+        responsive: true,
 
-      maintainAspectRatio: false,
+        maintainAspectRatio: false,
 
-      plugins: {
+        plugins: {
 
-        legend: {
+          legend: {
 
-          display: false
-        },
+            display: false
+          },
 
-        tooltip: {
+          tooltip: {
 
-          callbacks: {
+            callbacks: {
 
-            label: function(context) {
+              label: function(context) {
 
-              const total =
-                context.dataset.data
-                  .reduce((a,b)=>a+b,0);
+                const total =
+                  context.dataset.data
+                    .reduce((a,b)=>a+b,0);
 
-              const valor = context.raw;
+                const valor = context.raw;
 
-              const percentual =
-                ((valor / total) * 100)
-                  .toFixed(1);
+                const percentual =
+                  ((valor / total) * 100)
+                    .toFixed(1);
 
-              return `${valor} OS (${percentual}%)`;
+                return `${valor} OS (${percentual}%)`;
+              }
             }
           }
-        }
-      },
+        },
 
-      scales: {
+        scales: {
 
-        y: {
+          x: {
 
-          beginAtZero: true
-        }
-      },
+            ticks: {
 
-      animation: {
+              color: corTexto
+            },
 
-        onComplete: function() {
+            grid: {
 
-          const chart = this.chart;
+              color: corGrid
+            }
+          },
 
-          const ctx = chart.ctx;
+          y: {
 
-          ctx.font = "bold 12px Arial";
+            beginAtZero: true,
 
-          ctx.textAlign = "center";
+            ticks: {
 
-          ctx.textBaseline = "bottom";
+              color: corTexto
+            },
 
-          this.data.datasets.forEach((dataset, i) => {
+            grid: {
 
-            const meta =
-              chart.getDatasetMeta(i);
+              color: corGrid
+            }
+          }
+        },
 
-            meta.data.forEach((bar, index) => {
+        animation: {
 
-              const valor =
-                dataset.data[index];
+          onComplete: function() {
 
-              ctx.fillStyle = "#111827";
+            const chart = this.chart;
 
-              ctx.fillText(
-                valor,
-                bar.x,
-                bar.y - 5
-              );
+            const ctx = chart.ctx;
+
+            ctx.font = "bold 12px Arial";
+
+            ctx.textAlign = "center";
+
+            ctx.textBaseline = "bottom";
+
+            this.data.datasets.forEach((dataset, i) => {
+
+              const meta =
+                chart.getDatasetMeta(i);
+
+              meta.data.forEach((bar, index) => {
+
+                const valor =
+                  dataset.data[index];
+
+                ctx.fillStyle = corTexto;
+
+                ctx.fillText(
+                  valor,
+                  bar.x,
+                  bar.y - 5
+                );
+              });
             });
-          });
+          }
         }
       }
     }
-  }
-);
+  );
 
   criarFiltros(categorias);
 }
@@ -526,12 +625,10 @@ function criarFiltros(categorias) {
 
     botao.innerText = categoria;
 
-    botao.classList.add("filtro-btn", "ativo");
+    botao.classList.add("filtro-btn");
 
     botao.style.backgroundColor =
       cores[index % cores.length];
-
-    botao.style.color = "white";
 
     botao.onclick = function() {
 
@@ -542,11 +639,9 @@ function criarFiltros(categorias) {
 
       categoriaChart.update();
 
-      botao.classList.toggle("ativo");
-
       if (dataset.hidden) {
 
-        botao.style.opacity = "0.4";
+        botao.style.opacity = "0.35";
 
       } else {
 
