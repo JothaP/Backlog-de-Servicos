@@ -152,7 +152,7 @@
     </div>
 
     <div class="card">
-      <h3>Distribuição Atual por Categoria</h3>
+      <h3>Distribuição por Categoria</h3>
       <canvas id="pizzaChart"></canvas>
     </div>
 
@@ -403,75 +403,77 @@ function processarDados(data) {
   // Pizza
 
   pizzaChart = new Chart(
-    document.getElementById("pizzaChart"),
-    {
-      type: "pie",
+  document.getElementById("pizzaChart"),
+  {
+    type: "bar",
 
-      data: {
+    data: {
 
-        labels:
-          categorias.map((cat, index) =>
-            `${cat} (${backlogAtual[index]})`
+      labels:
+        categorias.map((cat, index) =>
+          `${cat}`
+        ),
+
+      datasets: [{
+
+        label: "Quantidade de OS",
+
+        data: backlogAtual,
+
+        backgroundColor:
+          categorias.map((_, index) =>
+            cores[index % cores.length]
           ),
 
-        datasets: [{
+        borderRadius: 6
+      }]
+    },
 
-          data: backlogAtual,
+    options: {
 
-          backgroundColor:
-            categorias.map((_, index) =>
-              cores[index % cores.length]
-            )
-        }]
-      },
+      responsive: true,
 
-      options: {
+      maintainAspectRatio: false,
 
-        responsive: true,
+      plugins: {
 
-        maintainAspectRatio: false,
+        legend: {
 
-        plugins: {
+          display: false
+        },
 
-          legend: {
+        tooltip: {
 
-            position: "bottom",
+          callbacks: {
 
-            labels: {
+            label: function(context) {
 
-              font: {
+              const total =
+                context.dataset.data
+                  .reduce((a,b)=>a+b,0);
 
-                size: 12
-              },
+              const valor = context.raw;
 
-              padding: 20
-            }
-          },
+              const percentual =
+                ((valor / total) * 100)
+                  .toFixed(1);
 
-          tooltip: {
-
-            callbacks: {
-
-              label: function(context) {
-
-                const total =
-                  context.dataset.data
-                    .reduce((a,b)=>a+b,0);
-
-                const valor = context.raw;
-
-                const percentual =
-                  ((valor / total) * 100)
-                    .toFixed(1);
-
-                return `${context.label}: ${percentual}%`;
-              }
+              return `${valor} OS (${percentual}%)`;
             }
           }
         }
+      },
+
+      scales: {
+
+        y: {
+
+          beginAtZero: true
+        }
       }
     }
-  );
+  }
+);
 
   criarFiltros(categorias);
 }
