@@ -372,11 +372,11 @@ async function carregarGoogleSheets(){
 
   }catch(error){
 
-    console.error(error);
-
-    alert(
-      "Erro ao carregar Google Sheets"
+    console.warn(
+      "Tentativa inicial de carregamento..."
     );
+
+    console.error(error);
   }
 }
 
@@ -874,9 +874,12 @@ document
           "🌙 Tema Escuro";
     }
 
-    processarDados(
-      dadosGlobais
-    );
+    if(dadosGlobais.length > 0){
+
+      processarDados(
+        dadosGlobais
+      );
+    }
   });
 
 carregarGoogleSheets();
