@@ -1,6 +1,3 @@
-# Dashboard HTML Completo — Integração com SharePoint Excel
-
-```html
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -18,8 +15,6 @@
   </title>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
 
@@ -99,5 +94,797 @@
 
     .kpi-title{
       color:#94a3b8;
-      font-s
-```
+      font-size:14px;
+      margin-bottom:10px;
+    }
+
+    body.light-mode .kpi-title{
+      color:#6b7280;
+    }
+
+    .kpi-value{
+      font-size:30px;
+      font-weight:bold;
+    }
+
+    canvas{
+      width:100% !important;
+      height:420px !important;
+    }
+
+    footer{
+      text-align:center;
+      margin-top:40px;
+      color:#94a3b8;
+      font-size:14px;
+    }
+
+    body.light-mode footer{
+      color:#6b7280;
+    }
+
+    .filtro-container{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:20px;
+    }
+
+    .filtro-btn{
+      border:none;
+      border-radius:8px;
+      padding:10px 14px;
+      cursor:pointer;
+      color:white;
+      font-size:13px;
+      transition:0.2s;
+    }
+
+    .filtro-btn:hover{
+      opacity:0.85;
+    }
+
+    .theme-toggle{
+      position:fixed;
+      top:20px;
+      right:20px;
+      border:none;
+      border-radius:10px;
+      padding:12px 16px;
+      cursor:pointer;
+      font-weight:bold;
+      z-index:999;
+      background:white;
+      color:#111827;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.25);
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<button
+  id="themeToggle"
+  class="theme-toggle">
+
+  ☀️ Tema Claro
+
+</button>
+
+<div class="container">
+
+  <h1>
+    Dashboard Operacional - Backlog
+  </h1>
+
+  <div class="kpis">
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Média Geral
+      </div>
+
+      <div
+        class="kpi-value"
+        id="mediaOS">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Maior Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="maxOS">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Menor Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="minOS">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Categoria Crítica
+      </div>
+
+      <div
+        class="kpi-value"
+        id="categoriaCritica">
+
+        -
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="dashboard">
+
+    <div class="card">
+
+      <h3>
+        Evolução do Backlog Total
+      </h3>
+
+      <canvas id="backlogChart"></canvas>
+
+    </div>
+
+    <div class="card">
+
+      <h3>
+        Distribuição por Categoria
+      </h3>
+
+      <canvas id="pizzaChart"></canvas>
+
+    </div>
+
+    <div
+      class="card"
+      style="grid-column:span 2;">
+
+      <h3>
+        Evolução por Categoria
+      </h3>
+
+      <div
+        class="filtro-container"
+        id="filtrosCategorias">
+      </div>
+
+      <canvas id="categoriaChart"></canvas>
+
+    </div>
+
+  </div>
+
+</div>
+
+<footer>
+
+Dashboard conectado ao Google Sheets
+
+</footer>
+
+<script>
+
+const GOOGLE_SHEETS_URL =
+"https://docs.google.com/spreadsheets/d/1W2eGwBdt8ygTBXj3vKDPzqwpeQHYN6KmlPkHQONP88k/edit?gid=0#gid=0";
+
+let backlogChart;
+let pizzaChart;
+let categoriaChart;
+
+let dadosGlobais = [];
+
+let darkMode = true;
+
+let corTexto =
+  "#f8fafc";
+
+let corGrid =
+  "rgba(255,255,255,0.1)";
+
+const cores = [
+
+  "#3b82f6",
+  "#ef4444",
+  "#22c55e",
+  "#eab308",
+  "#a855f7",
+  "#06b6d4",
+  "#f97316",
+  "#94a3b8"
+];
+
+async function carregarGoogleSheets(){
+
+  try{
+
+    const sheetIdMatch =
+      GOOGLE_SHEETS_URL.match(
+        /\/d\/([a-zA-Z0-9-_]+)/
+      );
+
+    const sheetId =
+      sheetIdMatch[1];
+
+    const exportUrl =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+
+    const response =
+      await fetch(exportUrl);
+
+    const text =
+      await response.text();
+
+    const json =
+      JSON.parse(
+        text.substr(47).slice(0,-2)
+      );
+
+    const rows =
+      json.table.rows.map(r =>
+        r.c.map(c =>
+          c ? c.v : ''
+        )
+      );
+
+    const headers =
+      json.table.cols.map(c =>
+        c.label
+      );
+
+    processarDados(
+      [headers,...rows]
+    );
+
+  }catch(error){
+
+    console.warn(
+      "Tentativa inicial de carregamento..."
+    );
+
+    console.error(error);
+  }
+}
+
+function destruirGraficos(){
+
+  if(backlogChart)
+    backlogChart.destroy();
+
+  if(pizzaChart)
+    pizzaChart.destroy();
+
+  if(categoriaChart)
+    categoriaChart.destroy();
+}
+
+function processarDados(data){
+
+  dadosGlobais = data;
+
+  destruirGraficos();
+
+  const headers =
+    data[0];
+
+  const rows =
+    data.slice(1);
+
+  const periodos =
+    rows.map(r => r[0]);
+
+  const categorias =
+    headers.slice(1);
+
+  const totaisPeriodo = [];
+
+  rows.forEach(row => {
+
+    let totalLinha = 0;
+
+    categorias.forEach((cat,index)=>{
+
+      totalLinha +=
+        Number(row[index + 1]) || 0;
+    });
+
+    totaisPeriodo.push(
+      totalLinha
+    );
+  });
+
+  const ultimaLinha =
+    rows[rows.length - 1];
+
+  const backlogAtual =
+    categorias.map((cat,index)=>
+
+      Number(
+        ultimaLinha[index + 1]
+      ) || 0
+    );
+
+  const media =
+    (
+      totaisPeriodo.reduce(
+        (a,b)=>a+b,0
+      )
+      /
+      totaisPeriodo.length
+    ).toFixed(1);
+
+  const max =
+    Math.max(...totaisPeriodo);
+
+  const min =
+    Math.min(...totaisPeriodo);
+
+  const indiceMaior =
+    backlogAtual.indexOf(
+      Math.max(...backlogAtual)
+    );
+
+  document
+    .getElementById("mediaOS")
+    .innerText = media;
+
+  document
+    .getElementById("maxOS")
+    .innerText = max;
+
+  document
+    .getElementById("minOS")
+    .innerText = min;
+
+  document
+    .getElementById(
+      "categoriaCritica"
+    )
+    .innerText =
+      categorias[indiceMaior];
+
+  // BACKLOG TOTAL
+
+  backlogChart =
+    new Chart(
+
+      document.getElementById(
+        "backlogChart"
+      ),
+
+      {
+
+      type:"line",
+
+      data:{
+
+        labels:periodos,
+
+        datasets:[{
+
+          label:"Total de OS",
+
+          data:totaisPeriodo,
+
+          borderColor:"#3b82f6",
+
+          backgroundColor:"#3b82f6",
+
+          borderWidth:3,
+
+          tension:0.3
+        }]
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        plugins:{
+
+          legend:{
+
+            labels:{
+              color:corTexto
+            }
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        }
+      }
+    });
+
+  // EVOLUÇÃO POR CATEGORIA
+
+  const datasetsCategorias =
+
+    categorias.map((cat,index)=>({
+
+      label:cat,
+
+      data:
+        rows.map(r =>
+
+          Number(
+            r[index + 1]
+          ) || 0
+        ),
+
+      borderColor:
+        cores[index % cores.length],
+
+      backgroundColor:
+        cores[index % cores.length],
+
+      borderWidth:2,
+
+      tension:0.3,
+
+      hidden:false
+    }));
+
+  categoriaChart =
+    new Chart(
+
+      document.getElementById(
+        "categoriaChart"
+      ),
+
+      {
+
+      type:"line",
+
+      data:{
+
+        labels:periodos,
+
+        datasets:datasetsCategorias
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        interaction:{
+
+          mode:"index",
+
+          intersect:false
+        },
+
+        plugins:{
+
+          legend:{
+
+            position:"bottom",
+
+            labels:{
+              color:corTexto
+            }
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        }
+      }
+    });
+
+  criarFiltros();
+
+  // DISTRIBUIÇÃO
+
+  pizzaChart =
+    new Chart(
+
+      document.getElementById(
+        "pizzaChart"
+      ),
+
+      {
+
+      type:"bar",
+
+      data:{
+
+        labels:
+          categorias.map(cat => cat),
+
+        datasets:[{
+
+          label:
+            "Quantidade de OS",
+
+          data:backlogAtual,
+
+          backgroundColor:
+            categorias.map((_,index)=>
+
+              cores[
+                index % cores.length
+              ]
+            ),
+
+          borderRadius:6
+        }]
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        plugins:{
+
+          legend:{
+            display:false
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            beginAtZero:true,
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        },
+
+        animation:{
+
+          onComplete:function(){
+
+            const chart =
+              this.chart;
+
+            const ctx =
+              chart.ctx;
+
+            ctx.font =
+              "bold 12px Arial";
+
+            ctx.textAlign =
+              "center";
+
+            ctx.textBaseline =
+              "bottom";
+
+            this.data.datasets
+              .forEach((dataset,i)=>{
+
+              const meta =
+                chart.getDatasetMeta(i);
+
+              meta.data.forEach((bar,index)=>{
+
+                const valor =
+                  dataset.data[index];
+
+                ctx.fillStyle =
+                  corTexto;
+
+                ctx.fillText(
+                  valor,
+                  bar.x,
+                  bar.y - 5
+                );
+              });
+            });
+          }
+        }
+      }
+    });
+}
+
+function criarFiltros(){
+
+  const container =
+    document.getElementById(
+      "filtrosCategorias"
+    );
+
+  container.innerHTML = "";
+
+  categoriaChart
+    .data
+    .datasets
+    .forEach((dataset,index)=>{
+
+      const botao =
+        document.createElement(
+          "button"
+        );
+
+      botao.innerText =
+        dataset.label;
+
+      botao.classList.add(
+        "filtro-btn"
+      );
+
+      botao.style.backgroundColor =
+        cores[index % cores.length];
+
+      botao.style.opacity = "1";
+
+      botao.onclick = () => {
+
+        dataset.hidden =
+          !dataset.hidden;
+
+        categoriaChart.update();
+
+        botao.style.opacity =
+          dataset.hidden
+            ? "0.35"
+            : "1";
+      };
+
+      container.appendChild(
+        botao
+      );
+    });
+}
+
+document
+  .getElementById(
+    "themeToggle"
+  )
+  .addEventListener(
+    "click",
+    ()=>{
+
+    darkMode =
+      !darkMode;
+
+    document.body
+      .classList.toggle(
+        "light-mode"
+      );
+
+    if(darkMode){
+
+      corTexto =
+        "#f8fafc";
+
+      corGrid =
+        "rgba(255,255,255,0.1)";
+
+      document
+        .getElementById(
+          "themeToggle"
+        )
+        .innerText =
+          "☀️ Tema Claro";
+
+    }else{
+
+      corTexto =
+        "#111827";
+
+      corGrid =
+        "rgba(0,0,0,0.1)";
+
+      document
+        .getElementById(
+          "themeToggle"
+        )
+        .innerText =
+          "🌙 Tema Escuro";
+    }
+
+    if(dadosGlobais.length > 0){
+
+      processarDados(
+        dadosGlobais
+      );
+    }
+  });
+
+carregarGoogleSheets();
+
+</script>
+
+</body>
+</html>
