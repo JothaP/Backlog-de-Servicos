@@ -429,13 +429,23 @@ async function carregarPagina2(){
         )
       );
 
-    const labels =
-      rows.map(r => r[0]);
+    const categorias = [];
+    const dentroPrazo = [];
+    const foraPrazo = [];
 
-    const valores =
-      rows.map(r =>
-        Number(r[1]) || 0
-      );
+    rows.forEach(r => {
+
+      const categoria = r[0];
+      const dp = Number(r[1]) || 0;
+      const fp = Number(r[2]) || 0;
+
+      if((dp + fp) > 0){
+
+        categorias.push(categoria);
+        dentroPrazo.push(dp);
+        foraPrazo.push(fp);
+      }
+    });
 
     if(planilha2Chart)
       planilha2Chart.destroy();
@@ -453,24 +463,32 @@ async function carregarPagina2(){
 
         data:{
 
-          labels:labels,
+          labels:categorias,
 
-          datasets:[{
+          datasets:[
 
-            label:"Quantidade",
+            {
 
-            data:valores,
+              label:"Dentro do Prazo",
 
-            backgroundColor:
-              labels.map((_,index)=>
+              data:dentroPrazo,
 
-                cores[
-                  index % cores.length
-                ]
-              ),
+              backgroundColor:"#22c55e",
 
-            borderRadius:8
-          }]
+              borderRadius:6
+            },
+
+            {
+
+              label:"Fora do Prazo",
+
+              data:foraPrazo,
+
+              backgroundColor:"#ef4444",
+
+              borderRadius:6
+            }
+          ]
         },
 
         options:{
@@ -482,7 +500,10 @@ async function carregarPagina2(){
           plugins:{
 
             legend:{
-              display:false
+
+              labels:{
+                color:corTexto
+              }
             }
           },
 
@@ -546,16 +567,19 @@ async function carregarPagina2(){
                   const valor =
                     dataset.data[index];
 
-                  ctx.fillStyle =
-                    darkMode
-                      ? "#f8fafc"
-                      : "#000000";
+                  if(valor > 0){
 
-                  ctx.fillText(
-                    valor,
-                    bar.x,
-                    bar.y - 5
-                  );
+                    ctx.fillStyle =
+                      darkMode
+                        ? "#f8fafc"
+                        : "#000000";
+
+                    ctx.fillText(
+                      valor,
+                      bar.x,
+                      bar.y - 5
+                    );
+                  }
                 });
               });
             }
