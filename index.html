@@ -216,12 +216,12 @@
     <div class="kpi-card">
 
       <div class="kpi-title">
-        Qnt. da Categoria Crítica
+        Dentro do Prazo
       </div>
 
       <div
         class="kpi-value"
-        id="osCritica">
+        id="dentroPrazo">
 
         -
 
@@ -232,12 +232,12 @@
     <div class="kpi-card">
 
       <div class="kpi-title">
-        Média Geral
+        Fora do Prazo
       </div>
 
       <div
         class="kpi-value"
-        id="mediaGeral">
+        id="foraPrazo">
 
         -
 
@@ -327,13 +327,13 @@ let corGrid =
 const cores = [
 
   "#3b82f6",
-  "#ef4444",
-  "#22c55e",
-  "#eab308",
-  "#a855f7",
-  "#06b6d4",
-  "#f97316",
-  "#94a3b8"
+  "#2563eb",
+  "#1d4ed8",
+  "#60a5fa",
+  "#93c5fd",
+  "#0ea5e9",
+  "#0284c7",
+  "#0369a1"
 ];
 
 const categoriasPermitidas = [
@@ -433,11 +433,17 @@ async function carregarPagina2(){
     const dentroPrazo = [];
     const foraPrazo = [];
 
+    let totalDP = 0;
+    let totalFP = 0;
+
     rows.forEach(r => {
 
       const categoria = r[0];
       const dp = Number(r[1]) || 0;
       const fp = Number(r[2]) || 0;
+
+      totalDP += dp;
+      totalFP += fp;
 
       if((dp + fp) > 0){
 
@@ -446,6 +452,20 @@ async function carregarPagina2(){
         foraPrazo.push(fp);
       }
     });
+
+    document
+      .getElementById(
+        "dentroPrazo"
+      )
+      .innerText =
+        totalDP;
+
+    document
+      .getElementById(
+        "foraPrazo"
+      )
+      .innerText =
+        totalFP;
 
     if(planilha2Chart)
       planilha2Chart.destroy();
@@ -473,7 +493,7 @@ async function carregarPagina2(){
 
               data:dentroPrazo,
 
-              backgroundColor:"#22c55e",
+              backgroundColor:"#3b82f6",
 
               borderRadius:6
             },
@@ -484,7 +504,7 @@ async function carregarPagina2(){
 
               data:foraPrazo,
 
-              backgroundColor:"#ef4444",
+              backgroundColor:"#1d4ed8",
 
               borderRadius:6
             }
@@ -674,15 +694,6 @@ function processarDados(data){
       item => item.valor
     );
 
-  const media =
-  (
-    totaisPeriodo.reduce(
-      (a,b)=>a+b,0
-    )
-    /
-    totaisPeriodo.length
-  ).toFixed(1);
-
   const indiceMaior =
     backlogCompleto.findIndex(
       item =>
@@ -715,22 +726,6 @@ function processarDados(data){
       backlogCompleto[
         indiceMaior
       ].nome;
-
-  document
-    .getElementById(
-      "osCritica"
-    )
-    .innerText =
-      backlogCompleto[
-        indiceMaior
-      ].valor;
-
-  document
-    .getElementById(
-      "mediaGeral"
-    )
-    .innerText =
-      media;
 
   backlogChart =
     new Chart(
