@@ -583,49 +583,32 @@ function processarDados(data){
       }
     });
 
-  const categoriasPermitidas = [
-
-    "Desob. De Ramal",
-    "Subst. De Ramal",
-    "Reparo de Ramal",
-    "Subst. Registro de Cavalete",
-    "Padronização Cavalete",
-    "Reparo de Cavalete",
-    "Retrabalho de Ramal"
-  ];
-
   const datasetsCategorias =
 
-    categorias
-      .map((cat,index)=>({
+    categorias.map((cat,index)=>({
 
-        label:cat,
+      label:cat,
 
-        data:
-          rows.map(r =>
+      data:
+        rows.map(r =>
 
-            Number(
-              r[index + 1]
-            ) || 0
-          ),
+          Number(
+            r[index + 1]
+          ) || 0
+        ),
 
-        borderColor:
-          cores[index % cores.length],
+      borderColor:
+        cores[index % cores.length],
 
-        backgroundColor:
-          cores[index % cores.length],
+      backgroundColor:
+        cores[index % cores.length],
 
-        borderWidth:2,
+      borderWidth:2,
 
-        tension:0.3,
+      tension:0.3,
 
-        hidden:false
-      }))
-      .filter(dataset =>
-        categoriasPermitidas.includes(
-          dataset.label
-        )
-      );
+      hidden:false
+    }));
 
   categoriaChart =
     new Chart(
