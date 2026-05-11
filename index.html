@@ -160,25 +160,6 @@
         0 2px 10px rgba(0,0,0,0.25);
     }
 
-    .periodo-filtro{
-      display:flex;
-      gap:10px;
-      margin-bottom:15px;
-      flex-wrap:wrap;
-    }
-
-    .periodo-filtro input,
-    .periodo-filtro button{
-      padding:8px 12px;
-      border:none;
-      border-radius:8px;
-    }
-
-    .periodo-filtro button{
-      cursor:pointer;
-      font-weight:bold;
-    }
-
   </style>
 
 </head>
@@ -204,12 +185,44 @@
     <div class="kpi-card">
 
       <div class="kpi-title">
-        Quantidade Atual
+        Média Geral
       </div>
 
       <div
         class="kpi-value"
-        id="quantidadeAtual">
+        id="mediaOS">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Maior Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="maxOS">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Menor Backlog
+      </div>
+
+      <div
+        class="kpi-value"
+        id="minOS">
 
         -
 
@@ -233,38 +246,6 @@
 
     </div>
 
-    <div class="kpi-card">
-
-      <div class="kpi-title">
-        Dentro do Prazo
-      </div>
-
-      <div
-        class="kpi-value"
-        id="dentroPrazo">
-
-        -
-
-      </div>
-
-    </div>
-
-    <div class="kpi-card">
-
-      <div class="kpi-title">
-        Fora do Prazo
-      </div>
-
-      <div
-        class="kpi-value"
-        id="foraPrazo">
-
-        -
-
-      </div>
-
-    </div>
-
   </div>
 
   <div class="dashboard">
@@ -274,26 +255,6 @@
       <h3>
         Evolução do Backlog
       </h3>
-
-      <div class="periodo-filtro">
-
-        <input
-          type="date"
-          id="dataInicial"
-        />
-
-        <input
-          type="date"
-          id="dataFinal"
-        />
-
-        <button onclick="filtrarPeriodo()">
-
-          Filtrar
-
-        </button>
-
-      </div>
 
       <canvas id="backlogChart"></canvas>
 
@@ -346,7 +307,6 @@ let pizzaChart;
 let categoriaChart;
 
 let dadosGlobais = [];
-let dadosOriginais = [];
 
 let darkMode = true;
 
@@ -435,7 +395,6 @@ function destruirGraficos(){
 function processarDados(data){
 
   dadosGlobais = data;
-  dadosOriginais = data;
 
   destruirGraficos();
 
@@ -479,22 +438,37 @@ function processarDados(data){
       ) || 0
     );
 
+  const media =
+    (
+      totaisPeriodo.reduce(
+        (a,b)=>a+b,0
+      )
+      /
+      totaisPeriodo.length
+    ).toFixed(1);
+
+  const max =
+    Math.max(...totaisPeriodo);
+
+  const min =
+    Math.min(...totaisPeriodo);
+
   const indiceMaior =
     backlogAtual.indexOf(
       Math.max(...backlogAtual)
     );
 
-  const quantidadeAtual =
-    backlogAtual.reduce(
-      (a,b)=>a+b,0
-    );
+  document
+    .getElementById("mediaOS")
+    .innerText = media;
 
   document
-    .getElementById(
-      "quantidadeAtual"
-    )
-    .innerText =
-      quantidadeAtual;
+    .getElementById("maxOS")
+    .innerText = max;
+
+  document
+    .getElementById("minOS")
+    .innerText = min;
 
   document
     .getElementById(
@@ -502,50 +476,6 @@ function processarDados(data){
     )
     .innerText =
       categorias[indiceMaior];
-
-  let dentroPrazo = 0;
-  let foraPrazo = 0;
-
-  const indiceStatus =
-    headers.findIndex(h =>
-      String(h)
-        .toLowerCase()
-        .includes("status")
-    );
-
-  if(indiceStatus !== -1){
-
-    rows.forEach(row => {
-
-      const status =
-        String(
-          row[indiceStatus]
-        ).trim().toUpperCase();
-
-      if(status === "DP"){
-
-        dentroPrazo++;
-
-      }else if(status === "FP"){
-
-        foraPrazo++;
-      }
-    });
-  }
-
-  document
-    .getElementById(
-      "dentroPrazo"
-    )
-    .innerText =
-      dentroPrazo;
-
-  document
-    .getElementById(
-      "foraPrazo"
-    )
-    .innerText =
-      foraPrazo;
 
   backlogChart =
     new Chart(
@@ -773,9 +703,10 @@ function processarDados(data){
           x:{
 
             ticks:{
-              color: darkMode
-                ? "#f8fafc"
-                : "#111827"
+              color:
+                darkMode
+                  ? "#f8fafc"
+                  : "#111827"
             },
 
             grid:{
@@ -891,70 +822,6 @@ function criarFiltros(){
         botao
       );
     });
-}
-
-function filtrarPeriodo(){
-
-  const inicio =
-    document
-      .getElementById(
-        "dataInicial"
-      )
-      .value;
-
-  const fim =
-    document
-      .getElementById(
-        "dataFinal"
-      )
-      .value;
-
-  if(!inicio || !fim){
-
-    processarDados(
-      dadosOriginais
-    );
-
-    return;
-  }
-
-  const headers =
-    dadosOriginais[0];
-
-  const rows =
-    dadosOriginais.slice(1);
-
-  const filtradas =
-    rows.filter(row => {
-
-      const periodo =
-        row[0];
-
-      const dataTexto =
-        periodo.split(" ")[0];
-
-      const partes =
-        dataTexto.split("/");
-
-      if(partes.length !== 3){
-
-        return true;
-      }
-
-      const dataFormatada =
-        `${partes[2]}-${partes[1]}-${partes[0]}`;
-
-      return (
-        dataFormatada >= inicio
-        &&
-        dataFormatada <= fim
-      );
-    });
-
-  processarDados([
-    headers,
-    ...filtradas
-  ]);
 }
 
 document
