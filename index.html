@@ -47,9 +47,8 @@
     }
 
     .dashboard{
-      display:grid;
-      grid-template-columns:
-        repeat(auto-fit,minmax(450px,1fr));
+      display:flex;
+      flex-direction:column;
       gap:20px;
     }
 
@@ -270,9 +269,7 @@
 
     </div>
 
-    <div
-      class="card"
-      style="grid-column:span 2;">
+    <div class="card">
 
       <h3>
         Evolução por Categoria
@@ -290,7 +287,7 @@
     <div class="card">
 
       <h3>
-        Indicadores - Página2
+        Categoria x Prazo
       </h3>
 
       <canvas id="planilha2Chart"></canvas>
