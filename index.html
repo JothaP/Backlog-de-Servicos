@@ -123,27 +123,6 @@
       color:#6b7280;
     }
 
-    .filtro-container{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-      margin-bottom:20px;
-    }
-
-    .filtro-btn{
-      border:none;
-      border-radius:8px;
-      padding:10px 14px;
-      cursor:pointer;
-      color:white;
-      font-size:13px;
-      transition:0.2s;
-    }
-
-    .filtro-btn:hover{
-      opacity:0.85;
-    }
-
     .theme-toggle{
       position:fixed;
       top:20px;
@@ -158,6 +137,24 @@
       color:#111827;
       box-shadow:
         0 2px 10px rgba(0,0,0,0.25);
+    }
+
+    #filtroCategorias{
+
+      width:100%;
+      min-height:120px;
+      border-radius:10px;
+      padding:10px;
+      margin-bottom:20px;
+      background:#0f172a;
+      color:white;
+      border:1px solid #334155;
+    }
+
+    body.light-mode #filtroCategorias{
+
+      background:white;
+      color:black;
     }
 
   </style>
@@ -185,44 +182,12 @@
     <div class="kpi-card">
 
       <div class="kpi-title">
-        Média Geral
+        Quantidade Atual
       </div>
 
       <div
         class="kpi-value"
-        id="mediaOS">
-
-        -
-
-      </div>
-
-    </div>
-
-    <div class="kpi-card">
-
-      <div class="kpi-title">
-        Maior Backlog
-      </div>
-
-      <div
-        class="kpi-value"
-        id="maxOS">
-
-        -
-
-      </div>
-
-    </div>
-
-    <div class="kpi-card">
-
-      <div class="kpi-title">
-        Menor Backlog
-      </div>
-
-      <div
-        class="kpi-value"
-        id="minOS">
+        id="quantidadeAtual">
 
         -
 
@@ -239,6 +204,38 @@
       <div
         class="kpi-value"
         id="categoriaCritica">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        OS da Categoria Crítica
+      </div>
+
+      <div
+        class="kpi-value"
+        id="osCritica">
+
+        -
+
+      </div>
+
+    </div>
+
+    <div class="kpi-card">
+
+      <div class="kpi-title">
+        Média Geral
+      </div>
+
+      <div
+        class="kpi-value"
+        id="mediaGeral">
 
         -
 
@@ -278,10 +275,11 @@
         Evolução por Categoria
       </h3>
 
-      <div
-        class="filtro-container"
-        id="filtrosCategorias">
-      </div>
+      <select
+        id="filtroCategorias"
+        multiple
+        onchange="filtrarCategorias()">
+      </select>
 
       <canvas id="categoriaChart"></canvas>
 
@@ -372,10 +370,6 @@ async function carregarGoogleSheets(){
 
   }catch(error){
 
-    console.warn(
-      "Tentativa inicial de carregamento..."
-    );
-
     console.error(error);
   }
 }
@@ -430,52 +424,88 @@ function processarDados(data){
   const ultimaLinha =
     rows[rows.length - 1];
 
-  const backlogAtual =
-    categorias.map((cat,index)=>
+  const backlogCompleto =
+    categorias.map((cat,index)=>({
 
-      Number(
+      nome:cat,
+
+      valor:Number(
         ultimaLinha[index + 1]
-      ) || 0
+      ) || 0,
+
+      cor:
+        cores[
+          index % cores.length
+        ]
+    }));
+
+  const backlogFiltrado =
+    backlogCompleto.filter(
+      item => item.valor > 0
+    );
+
+  const backlogAtual =
+    backlogFiltrado.map(
+      item => item.valor
     );
 
   const media =
-    (
-      totaisPeriodo.reduce(
-        (a,b)=>a+b,0
-      )
-      /
-      totaisPeriodo.length
-    ).toFixed(1);
-
-  const max =
-    Math.max(...totaisPeriodo);
-
-  const min =
-    Math.min(...totaisPeriodo);
+  (
+    totaisPeriodo.reduce(
+      (a,b)=>a+b,0
+    )
+    /
+    totaisPeriodo.length
+  ).toFixed(1);
 
   const indiceMaior =
-    backlogAtual.indexOf(
-      Math.max(...backlogAtual)
+    backlogCompleto.findIndex(
+      item =>
+        item.valor ===
+        Math.max(
+          ...backlogCompleto.map(
+            x => x.valor
+          )
+        )
+    );
+
+  const quantidadeAtual =
+    backlogAtual.reduce(
+      (a,b)=>a+b,
+      0
     );
 
   document
-    .getElementById("mediaOS")
-    .innerText = media;
-
-  document
-    .getElementById("maxOS")
-    .innerText = max;
-
-  document
-    .getElementById("minOS")
-    .innerText = min;
+    .getElementById(
+      "quantidadeAtual"
+    )
+    .innerText =
+      quantidadeAtual;
 
   document
     .getElementById(
       "categoriaCritica"
     )
     .innerText =
-      categorias[indiceMaior];
+      backlogCompleto[
+        indiceMaior
+      ].nome;
+
+  document
+    .getElementById(
+      "osCritica"
+    )
+    .innerText =
+      backlogCompleto[
+        indiceMaior
+      ].valor;
+
+  document
+    .getElementById(
+      "mediaGeral"
+    )
+    .innerText =
+      media;
 
   backlogChart =
     new Chart(
@@ -664,7 +694,9 @@ function processarDados(data){
       data:{
 
         labels:
-          categorias.map(cat => cat),
+          backlogFiltrado.map(
+            item => item.nome
+          ),
 
         datasets:[{
 
@@ -674,11 +706,8 @@ function processarDados(data){
           data:backlogAtual,
 
           backgroundColor:
-            categorias.map((_,index)=>
-
-              cores[
-                index % cores.length
-              ]
+            backlogFiltrado.map(
+              item => item.cor
             ),
 
           borderRadius:6
@@ -706,7 +735,7 @@ function processarDados(data){
               color:
                 darkMode
                   ? "#f8fafc"
-                  : "#111827"
+                  : "#000000"
             },
 
             grid:{
@@ -759,7 +788,9 @@ function processarDados(data){
                   dataset.data[index];
 
                 ctx.fillStyle =
-                  corTexto;
+                  darkMode
+                    ? "#f8fafc"
+                    : "#000000";
 
                 ctx.fillText(
                   valor,
@@ -776,52 +807,70 @@ function processarDados(data){
 
 function criarFiltros(){
 
-  const container =
+  const select =
     document.getElementById(
-      "filtrosCategorias"
+      "filtroCategorias"
     );
 
-  container.innerHTML = "";
+  select.innerHTML = "";
 
   categoriaChart
     .data
     .datasets
     .forEach((dataset,index)=>{
 
-      const botao =
+      const option =
         document.createElement(
-          "button"
+          "option"
         );
 
-      botao.innerText =
+      option.value =
+        index;
+
+      option.text =
         dataset.label;
 
-      botao.classList.add(
-        "filtro-btn"
-      );
+      option.selected =
+        true;
 
-      botao.style.backgroundColor =
-        cores[index % cores.length];
+      option.style.background =
+        "#1e293b";
 
-      botao.style.opacity = "1";
+      option.style.color =
+        "#ffffff";
 
-      botao.onclick = () => {
-
-        dataset.hidden =
-          !dataset.hidden;
-
-        categoriaChart.update();
-
-        botao.style.opacity =
-          dataset.hidden
-            ? "0.35"
-            : "1";
-      };
-
-      container.appendChild(
-        botao
+      select.appendChild(
+        option
       );
     });
+}
+
+function filtrarCategorias(){
+
+  const select =
+    document.getElementById(
+      "filtroCategorias"
+    );
+
+  const selecionados =
+    Array.from(
+      select.selectedOptions
+    ).map(option =>
+      Number(option.value)
+    );
+
+  categoriaChart
+    .data
+    .datasets
+    .forEach((dataset,index)=>{
+
+      dataset.hidden =
+        !selecionados.includes(
+          index
+        );
+    });
+
+  categoriaChart.update();
 }
 
 document
