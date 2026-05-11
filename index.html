@@ -331,13 +331,11 @@ const cores = [
 const categoriasPermitidas = [
 
   "Desob. de Ramal",
-  "Desob. De Ramal",
   "Subst. de Ramal",
-  "Subst. De Ramal",
   "Reparo de Ramal",
-  "Subst. Registro de Cavalete",
-  "Padronização Cavalete",
+  "Subst. Registro Cavalete",
   "Reparo de Cavalete",
+  "Padronização Cavalete",
   "Retrabalho de Ramal",
   "Substituição de HD"
 ];
@@ -600,17 +598,23 @@ function processarDados(data){
   const datasetsCategorias =
 
     categorias
+      .filter(cat =>
+        categoriasPermitidas.includes(cat)
+      )
       .map((cat,index)=>({
 
         label:cat,
 
         data:
-          rows.map(r =>
+          rows.map(r => {
 
-            Number(
-              r[index + 1]
-            ) || 0
-          ),
+            const indiceOriginal =
+              categorias.indexOf(cat);
+
+            return Number(
+              r[indiceOriginal + 1]
+            ) || 0;
+          }),
 
         borderColor:
           cores[index % cores.length],
@@ -623,12 +627,7 @@ function processarDados(data){
         tension:0.3,
 
         hidden:false
-      }))
-      .filter(dataset =>
-        categoriasPermitidas.includes(
-          dataset.label
-        )
-      );
+      }));
 
   categoriaChart =
     new Chart(
@@ -790,13 +789,6 @@ function criarFiltros(){
     .data
     .datasets
     .forEach((dataset)=>{
-
-      if(
-        !dataset.label ||
-        dataset.label.trim() === ""
-      ){
-        return;
-      }
 
       const botao =
         document.createElement(
