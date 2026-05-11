@@ -330,14 +330,16 @@ const cores = [
 
 const categoriasPermitidas = [
 
+  "Desob. de Ramal",
   "Desob. De Ramal",
+  "Subst. de Ramal",
   "Subst. De Ramal",
   "Reparo de Ramal",
   "Subst. Registro de Cavalete",
   "Padronização Cavalete",
   "Reparo de Cavalete",
   "Retrabalho de Ramal",
-  "Subst. de Ramal"
+  "Substituição de HD"
 ];
 
 async function carregarGoogleSheets(){
@@ -662,12 +664,7 @@ function processarDados(data){
         plugins:{
 
           legend:{
-
-            position:"bottom",
-
-            labels:{
-              color:corTexto
-            }
+            display:false
           }
         },
 
@@ -775,51 +772,6 @@ function processarDados(data){
               color:corGrid
             }
           }
-        },
-
-        animation:{
-
-          onComplete:function(){
-
-            const chart =
-              this.chart;
-
-            const ctx =
-              chart.ctx;
-
-            ctx.font =
-              "bold 12px Arial";
-
-            ctx.textAlign =
-              "center";
-
-            ctx.textBaseline =
-              "bottom";
-
-            this.data.datasets
-              .forEach((dataset,i)=>{
-
-              const meta =
-                chart.getDatasetMeta(i);
-
-              meta.data.forEach((bar,index)=>{
-
-                const valor =
-                  dataset.data[index];
-
-                ctx.fillStyle =
-                  darkMode
-                    ? "#f8fafc"
-                    : "#000000";
-
-                ctx.fillText(
-                  valor,
-                  bar.x,
-                  bar.y - 5
-                );
-              });
-            });
-          }
         }
       }
     });
@@ -837,7 +789,14 @@ function criarFiltros(){
   categoriaChart
     .data
     .datasets
-    .forEach((dataset,index)=>{
+    .forEach((dataset)=>{
+
+      if(
+        !dataset.label ||
+        dataset.label.trim() === ""
+      ){
+        return;
+      }
 
       const botao =
         document.createElement(
