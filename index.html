@@ -338,7 +338,7 @@ const cores = [
 
 const categoriasPermitidas = [
 
-  "Desob. de Ramal",
+  "Desob. De Ramal",
   "Subst. de Ramal",
   "Reparo de Ramal",
   "Subst. Registro Cavalete",
@@ -555,64 +555,13 @@ async function carregarPagina2(){
                 color:corGrid
               }
             }
-          },
-
-          animation:{
-
-            onComplete:function(){
-
-              const chart =
-                this.chart;
-
-              const ctx =
-                chart.ctx;
-
-              ctx.font =
-                "bold 12px Arial";
-
-              ctx.textAlign =
-                "center";
-
-              ctx.textBaseline =
-                "bottom";
-
-              this.data.datasets
-                .forEach((dataset,i)=>{
-
-                const meta =
-                  chart.getDatasetMeta(i);
-
-                meta.data.forEach((bar,index)=>{
-
-                  const valor =
-                    dataset.data[index];
-
-                  if(valor > 0){
-
-                    ctx.fillStyle =
-                      darkMode
-                        ? "#f8fafc"
-                        : "#000000";
-
-                    ctx.fillText(
-                      valor,
-                      bar.x,
-                      bar.y - 5
-                    );
-                  }
-                });
-              });
-            }
           }
         }
       });
 
   }catch(error){
 
-    console.error(
-      "Erro ao carregar Página2",
-      error
-    );
+    console.error(error);
   }
 }
 
@@ -801,8 +750,11 @@ function processarDados(data){
   const datasetsCategorias =
 
     categorias
-      .filter(cat =>
-        categoriasPermitidas.includes(cat)
+      .filter((cat,index,self) =>
+
+        categoriasPermitidas.includes(cat) &&
+
+        self.indexOf(cat) === index
       )
       .map((cat,index)=>({
 
