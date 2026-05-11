@@ -221,7 +221,7 @@
 
       <div
         class="kpi-value"
-        id="dentroPrazo">
+        id="osCritica">
 
         -
 
@@ -237,7 +237,7 @@
 
       <div
         class="kpi-value"
-        id="foraPrazo">
+        id="mediaGeral">
 
         -
 
@@ -338,7 +338,7 @@ const cores = [
 
 const categoriasPermitidas = [
 
-  "Desob. De Ramal",
+  "Desob. de Ramal",
   "Subst. de Ramal",
   "Reparo de Ramal",
   "Subst. Registro Cavalete",
@@ -442,30 +442,31 @@ async function carregarPagina2(){
       const dp = Number(r[1]) || 0;
       const fp = Number(r[2]) || 0;
 
-      totalDP += dp;
-      totalFP += fp;
+      // IGNORA TOTAL GERAL
+      if(
+        categoria &&
+        categoria.toString().toLowerCase() !== "total geral"
+      ){
 
-      if((dp + fp) > 0){
+        totalDP += dp;
+        totalFP += fp;
 
-        categorias.push(categoria);
-        dentroPrazo.push(dp);
-        foraPrazo.push(fp);
+        if((dp + fp) > 0){
+
+          categorias.push(categoria);
+          dentroPrazo.push(dp);
+          foraPrazo.push(fp);
+        }
       }
     });
 
     document
-      .getElementById(
-        "dentroPrazo"
-      )
-      .innerText =
-      totalDP;
+      .getElementById("osCritica")
+      .innerText = totalDP;
 
     document
-      .getElementById(
-        "foraPrazo"
-      )
-      .innerText =
-      totalFP;
+      .getElementById("mediaGeral")
+      .innerText = totalFP;
 
     if(planilha2Chart)
       planilha2Chart.destroy();
@@ -555,13 +556,64 @@ async function carregarPagina2(){
                 color:corGrid
               }
             }
+          },
+
+          animation:{
+
+            onComplete:function(){
+
+              const chart =
+                this.chart;
+
+              const ctx =
+                chart.ctx;
+
+              ctx.font =
+                "bold 12px Arial";
+
+              ctx.textAlign =
+                "center";
+
+              ctx.textBaseline =
+                "bottom";
+
+              this.data.datasets
+                .forEach((dataset,i)=>{
+
+                const meta =
+                  chart.getDatasetMeta(i);
+
+                meta.data.forEach((bar,index)=>{
+
+                  const valor =
+                    dataset.data[index];
+
+                  if(valor > 0){
+
+                    ctx.fillStyle =
+                      darkMode
+                        ? "#f8fafc"
+                        : "#000000";
+
+                    ctx.fillText(
+                      valor,
+                      bar.x,
+                      bar.y - 5
+                    );
+                  }
+                });
+              });
+            }
           }
         }
       });
 
   }catch(error){
 
-    console.error(error);
+    console.error(
+      "Erro ao carregar Página2",
+      error
+    );
   }
 }
 
@@ -575,6 +627,9 @@ function destruirGraficos(){
 
   if(categoriaChart)
     categoriaChart.destroy();
+
+  if(planilha2Chart)
+    planilha2Chart.destroy();
 }
 
 function processarDados(data){
@@ -749,27 +804,28 @@ function processarDados(data){
 
   const datasetsCategorias =
 
-    categorias
-      .filter((cat,index,self) =>
+    categoriasPermitidas.map((cat,index)=>{
 
-        categoriasPermitidas.includes(cat) &&
+      const indiceOriginal =
+        categorias.findIndex(
+          c =>
+            c.trim().toLowerCase() ===
+            cat.trim().toLowerCase()
+        );
 
-        self.indexOf(cat) === index
-      )
-      .map((cat,index)=>({
+      return {
 
         label:cat,
 
         data:
-          rows.map(r => {
+          rows.map(r =>
 
-            const indiceOriginal =
-              categorias.indexOf(cat);
-
-            return Number(
-              r[indiceOriginal + 1]
-            ) || 0;
-          }),
+            indiceOriginal >= 0
+              ? Number(
+                  r[indiceOriginal + 1]
+                ) || 0
+              : 0
+          ),
 
         borderColor:
           cores[index % cores.length],
@@ -782,7 +838,8 @@ function processarDados(data){
         tension:0.3,
 
         hidden:false
-      }));
+      };
+    });
 
   categoriaChart =
     new Chart(
