@@ -287,6 +287,16 @@
 
     </div>
 
+    <div class="card">
+
+      <h3>
+        Indicadores - Página2
+      </h3>
+
+      <canvas id="planilha2Chart"></canvas>
+
+    </div>
+
   </div>
 
 </div>
@@ -305,6 +315,7 @@ const GOOGLE_SHEETS_URL =
 let backlogChart;
 let pizzaChart;
 let categoriaChart;
+let planilha2Chart;
 
 let dadosGlobais = [];
 
@@ -388,6 +399,182 @@ async function carregarGoogleSheets(){
   }
 }
 
+async function carregarPagina2(){
+
+  try{
+
+    const sheetIdMatch =
+      GOOGLE_SHEETS_URL.match(
+        /\/d\/([a-zA-Z0-9-_]+)/
+      );
+
+    const sheetId =
+      sheetIdMatch[1];
+
+    const exportUrl =
+      `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Página2&tqx=out:json`;
+
+    const response =
+      await fetch(exportUrl);
+
+    const text =
+      await response.text();
+
+    const json =
+      JSON.parse(
+        text.substr(47).slice(0,-2)
+      );
+
+    const rows =
+      json.table.rows.map(r =>
+        r.c.map(c =>
+          c ? c.v : ''
+        )
+      );
+
+    const labels =
+      rows.map(r => r[0]);
+
+    const valores =
+      rows.map(r =>
+        Number(r[1]) || 0
+      );
+
+    if(planilha2Chart)
+      planilha2Chart.destroy();
+
+    planilha2Chart =
+      new Chart(
+
+        document.getElementById(
+          "planilha2Chart"
+        ),
+
+        {
+
+        type:"bar",
+
+        data:{
+
+          labels:labels,
+
+          datasets:[{
+
+            label:"Quantidade",
+
+            data:valores,
+
+            backgroundColor:
+              labels.map((_,index)=>
+
+                cores[
+                  index % cores.length
+                ]
+              ),
+
+            borderRadius:8
+          }]
+        },
+
+        options:{
+
+          responsive:true,
+
+          maintainAspectRatio:false,
+
+          plugins:{
+
+            legend:{
+              display:false
+            }
+          },
+
+          scales:{
+
+            x:{
+
+              ticks:{
+                color:
+                  darkMode
+                    ? "#f8fafc"
+                    : "#000000"
+              },
+
+              grid:{
+                color:corGrid
+              }
+            },
+
+            y:{
+
+              beginAtZero:true,
+
+              ticks:{
+                color:corTexto
+              },
+
+              grid:{
+                color:corGrid
+              }
+            }
+          },
+
+          animation:{
+
+            onComplete:function(){
+
+              const chart =
+                this.chart;
+
+              const ctx =
+                chart.ctx;
+
+              ctx.font =
+                "bold 12px Arial";
+
+              ctx.textAlign =
+                "center";
+
+              ctx.textBaseline =
+                "bottom";
+
+              this.data.datasets
+                .forEach((dataset,i)=>{
+
+                const meta =
+                  chart.getDatasetMeta(i);
+
+                meta.data.forEach((bar,index)=>{
+
+                  const valor =
+                    dataset.data[index];
+
+                  ctx.fillStyle =
+                    darkMode
+                      ? "#f8fafc"
+                      : "#000000";
+
+                  ctx.fillText(
+                    valor,
+                    bar.x,
+                    bar.y - 5
+                  );
+                });
+              });
+            }
+          }
+        }
+      });
+
+  }catch(error){
+
+    console.error(
+      "Erro ao carregar Página2",
+      error
+    );
+  }
+}
+
 function destruirGraficos(){
 
   if(backlogChart)
@@ -398,6 +585,9 @@ function destruirGraficos(){
 
   if(categoriaChart)
     categoriaChart.destroy();
+
+  if(planilha2Chart)
+    planilha2Chart.destroy();
 }
 
 function processarDados(data){
@@ -878,10 +1068,13 @@ document
       processarDados(
         dadosGlobais
       );
+
+      carregarPagina2();
     }
   });
 
 carregarGoogleSheets();
+carregarPagina2();
 
 </script>
 
