@@ -16,7 +16,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- EXPORTAÇÃO PDF -->
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -432,8 +431,16 @@ async function exportarPDF(){
     alturaPDF
   );
 
+  const hoje =
+    new Date();
+
+  const dataFormatada =
+    hoje.toLocaleDateString(
+      "pt-BR"
+    ).replaceAll("/","-");
+
   pdf.save(
-    "dashboard-backlog.pdf"
+    `Acompanhamento de Serviço - ${dataFormatada}.pdf`
   );
 }
 
@@ -556,6 +563,98 @@ async function carregarPagina2(){
       .getElementById("mediaGeral")
       .innerText = totalFP;
 
+    if(planilha2Chart)
+      planilha2Chart.destroy();
+
+    planilha2Chart =
+      new Chart(
+
+        document.getElementById(
+          "planilha2Chart"
+        ),
+
+        {
+
+        type:"bar",
+
+        data:{
+
+          labels:categorias,
+
+          datasets:[
+
+            {
+
+              label:"Dentro do Prazo",
+
+              data:dentroPrazo,
+
+              backgroundColor:"#2563eb",
+
+              borderRadius:6
+            },
+
+            {
+
+              label:"Fora do Prazo",
+
+              data:foraPrazo,
+
+              backgroundColor:"#60a5fa",
+
+              borderRadius:6
+            }
+          ]
+        },
+
+        options:{
+
+          responsive:true,
+
+          maintainAspectRatio:false,
+
+          plugins:{
+
+            legend:{
+
+              labels:{
+                color:corTexto
+              }
+            }
+          },
+
+          scales:{
+
+            x:{
+
+              ticks:{
+                color:
+                  darkMode
+                    ? "#f8fafc"
+                    : "#000000"
+              },
+
+              grid:{
+                color:corGrid
+              }
+            },
+
+            y:{
+
+              beginAtZero:true,
+
+              ticks:{
+                color:corTexto
+              },
+
+              grid:{
+                color:corGrid
+              }
+            }
+          }
+        }
+      });
+
   }catch(error){
 
     console.error(error);
@@ -615,7 +714,11 @@ function processarDados(data){
 
   const backlogFiltrado =
     backlogCompleto.filter(
-      item => item.valor > 0
+      item =>
+        item.valor > 0 &&
+        categoriasPermitidas.includes(
+          item.nome
+        )
     );
 
   const backlogAtual =
@@ -656,6 +759,314 @@ function processarDados(data){
         indiceMaior
       ].nome;
 
+  if(backlogChart)
+    backlogChart.destroy();
+
+  if(pizzaChart)
+    pizzaChart.destroy();
+
+  if(categoriaChart)
+    categoriaChart.destroy();
+
+  backlogChart =
+    new Chart(
+
+      document.getElementById(
+        "backlogChart"
+      ),
+
+      {
+
+      type:"line",
+
+      data:{
+
+        labels:periodos,
+
+        datasets:[{
+
+          label:"Total de OS",
+
+          data:totaisPeriodo,
+
+          borderColor:"#3b82f6",
+
+          backgroundColor:"#3b82f6",
+
+          borderWidth:3,
+
+          tension:0.3
+        }]
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        plugins:{
+
+          legend:{
+
+            labels:{
+              color:corTexto
+            }
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        }
+      }
+    });
+
+  const datasetsCategorias =
+
+    categoriasPermitidas.map((cat,index)=>({
+
+      label:cat,
+
+      data:
+        rows.map(r => {
+
+          const indiceOriginal =
+            categorias.indexOf(cat);
+
+          return Number(
+            r[indiceOriginal + 1]
+          ) || 0;
+        }),
+
+      borderColor:
+        cores[index % cores.length],
+
+      backgroundColor:
+        cores[index % cores.length],
+
+      borderWidth:2,
+
+      tension:0.3,
+
+      hidden:false
+    }));
+
+  categoriaChart =
+    new Chart(
+
+      document.getElementById(
+        "categoriaChart"
+      ),
+
+      {
+
+      type:"line",
+
+      data:{
+
+        labels:periodos,
+
+        datasets:datasetsCategorias
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        interaction:{
+
+          mode:"index",
+
+          intersect:false
+        },
+
+        plugins:{
+
+          legend:{
+            display:false
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        }
+      }
+    });
+
+  criarFiltros();
+
+  pizzaChart =
+    new Chart(
+
+      document.getElementById(
+        "pizzaChart"
+      ),
+
+      {
+
+      type:"bar",
+
+      data:{
+
+        labels:
+          backlogFiltrado.map(
+            item => item.nome
+          ),
+
+        datasets:[{
+
+          label:
+            "Quantidade de OS",
+
+          data:backlogAtual,
+
+          backgroundColor:
+            backlogFiltrado.map(
+              item => item.cor
+            ),
+
+          borderRadius:6
+        }]
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        plugins:{
+
+          legend:{
+            display:false
+          }
+        },
+
+        scales:{
+
+          x:{
+
+            ticks:{
+              color:
+                darkMode
+                  ? "#f8fafc"
+                  : "#000000"
+            },
+
+            grid:{
+              color:corGrid
+            }
+          },
+
+          y:{
+
+            beginAtZero:true,
+
+            ticks:{
+              color:corTexto
+            },
+
+            grid:{
+              color:corGrid
+            }
+          }
+        }
+      }
+    });
+}
+
+function criarFiltros(){
+
+  const container =
+    document.getElementById(
+      "filtrosCategorias"
+    );
+
+  container.innerHTML = "";
+
+  categoriaChart
+    .data
+    .datasets
+    .forEach((dataset)=>{
+
+      const botao =
+        document.createElement(
+          "button"
+        );
+
+      botao.innerText =
+        dataset.label;
+
+      botao.classList.add(
+        "filtro-btn"
+      );
+
+      botao.style.backgroundColor =
+        dataset.borderColor;
+
+      botao.style.opacity = "1";
+
+      botao.onclick = () => {
+
+        dataset.hidden =
+          !dataset.hidden;
+
+        categoriaChart.update();
+
+        botao.style.opacity =
+          dataset.hidden
+            ? "0.35"
+            : "1";
+      };
+
+      container.appendChild(
+        botao
+      );
+    });
 }
 
 document
@@ -704,6 +1115,12 @@ document
         .innerText =
           "🌙 Tema Escuro";
     }
+
+    processarDados(
+      dadosGlobais
+    );
+
+    carregarPagina2();
   });
 
 carregarGoogleSheets();
