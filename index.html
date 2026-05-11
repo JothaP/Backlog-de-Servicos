@@ -16,6 +16,11 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+  <!-- EXPORTAÇÃO PDF -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
   <style>
 
     *{
@@ -138,6 +143,22 @@
         0 2px 10px rgba(0,0,0,0.25);
     }
 
+    .pdf-btn{
+      position:fixed;
+      top:20px;
+      right:190px;
+      border:none;
+      border-radius:10px;
+      padding:12px 16px;
+      cursor:pointer;
+      font-weight:bold;
+      z-index:999;
+      background:#2563eb;
+      color:white;
+      box-shadow:
+        0 2px 10px rgba(0,0,0,0.25);
+    }
+
     .filtro-container{
       display:flex;
       flex-wrap:wrap;
@@ -166,6 +187,14 @@
 <body>
 
 <button
+  id="exportarPDF"
+  class="pdf-btn">
+
+  📄 Exportar PDF
+
+</button>
+
+<button
   id="themeToggle"
   class="theme-toggle">
 
@@ -173,7 +202,9 @@
 
 </button>
 
-<div class="container">
+<div
+  class="container"
+  id="dashboardExport">
 
   <h1>
     Dashboard Operacional - Backlog
@@ -348,6 +379,64 @@ const categoriasPermitidas = [
   "Substituição de HD"
 ];
 
+document
+  .getElementById("exportarPDF")
+  .addEventListener("click", exportarPDF);
+
+async function exportarPDF(){
+
+  const elemento =
+    document.getElementById(
+      "dashboardExport"
+    );
+
+  const canvas =
+    await html2canvas(
+      elemento,
+      {
+        scale:2,
+        useCORS:true
+      }
+    );
+
+  const imgData =
+    canvas.toDataURL(
+      "image/png"
+    );
+
+  const { jsPDF } =
+    window.jspdf;
+
+  const pdf =
+    new jsPDF(
+      "p",
+      "mm",
+      "a4"
+    );
+
+  const larguraPDF =
+    pdf.internal.pageSize.getWidth();
+
+  const alturaPDF =
+    (
+      canvas.height *
+      larguraPDF
+    ) / canvas.width;
+
+  pdf.addImage(
+    imgData,
+    "PNG",
+    0,
+    0,
+    larguraPDF,
+    alturaPDF
+  );
+
+  pdf.save(
+    "dashboard-backlog.pdf"
+  );
+}
+
 async function carregarGoogleSheets(){
 
   try{
@@ -442,7 +531,6 @@ async function carregarPagina2(){
       const dp = Number(r[1]) || 0;
       const fp = Number(r[2]) || 0;
 
-      // IGNORA TOTAL GERAL
       if(
         categoria &&
         categoria.toString().toLowerCase() !== "total geral"
@@ -468,175 +556,15 @@ async function carregarPagina2(){
       .getElementById("mediaGeral")
       .innerText = totalFP;
 
-    if(planilha2Chart)
-      planilha2Chart.destroy();
-
-    planilha2Chart =
-      new Chart(
-
-        document.getElementById(
-          "planilha2Chart"
-        ),
-
-        {
-
-        type:"bar",
-
-        data:{
-
-          labels:categorias,
-
-          datasets:[
-
-            {
-
-              label:"Dentro do Prazo",
-
-              data:dentroPrazo,
-
-              backgroundColor:"#2563eb",
-
-              borderRadius:6
-            },
-
-            {
-
-              label:"Fora do Prazo",
-
-              data:foraPrazo,
-
-              backgroundColor:"#60a5fa",
-
-              borderRadius:6
-            }
-          ]
-        },
-
-        options:{
-
-          responsive:true,
-
-          maintainAspectRatio:false,
-
-          plugins:{
-
-            legend:{
-
-              labels:{
-                color:corTexto
-              }
-            }
-          },
-
-          scales:{
-
-            x:{
-
-              ticks:{
-                color:
-                  darkMode
-                    ? "#f8fafc"
-                    : "#000000"
-              },
-
-              grid:{
-                color:corGrid
-              }
-            },
-
-            y:{
-
-              beginAtZero:true,
-
-              ticks:{
-                color:corTexto
-              },
-
-              grid:{
-                color:corGrid
-              }
-            }
-          },
-
-          animation:{
-
-            onComplete:function(){
-
-              const chart =
-                this.chart;
-
-              const ctx =
-                chart.ctx;
-
-              ctx.font =
-                "bold 12px Arial";
-
-              ctx.textAlign =
-                "center";
-
-              ctx.textBaseline =
-                "bottom";
-
-              this.data.datasets
-                .forEach((dataset,i)=>{
-
-                const meta =
-                  chart.getDatasetMeta(i);
-
-                meta.data.forEach((bar,index)=>{
-
-                  const valor =
-                    dataset.data[index];
-
-                  if(valor > 0){
-
-                    ctx.fillStyle =
-                      darkMode
-                        ? "#f8fafc"
-                        : "#000000";
-
-                    ctx.fillText(
-                      valor,
-                      bar.x,
-                      bar.y - 5
-                    );
-                  }
-                });
-              });
-            }
-          }
-        }
-      });
-
   }catch(error){
 
-    console.error(
-      "Erro ao carregar Página2",
-      error
-    );
+    console.error(error);
   }
-}
-
-function destruirGraficos(){
-
-  if(backlogChart)
-    backlogChart.destroy();
-
-  if(pizzaChart)
-    pizzaChart.destroy();
-
-  if(categoriaChart)
-    categoriaChart.destroy();
-
-  if(planilha2Chart)
-    planilha2Chart.destroy();
 }
 
 function processarDados(data){
 
   dadosGlobais = data;
-
-  destruirGraficos();
 
   const headers =
     data[0];
@@ -728,314 +656,6 @@ function processarDados(data){
         indiceMaior
       ].nome;
 
-  backlogChart =
-    new Chart(
-
-      document.getElementById(
-        "backlogChart"
-      ),
-
-      {
-
-      type:"line",
-
-      data:{
-
-        labels:periodos,
-
-        datasets:[{
-
-          label:"Total de OS",
-
-          data:totaisPeriodo,
-
-          borderColor:"#3b82f6",
-
-          backgroundColor:"#3b82f6",
-
-          borderWidth:3,
-
-          tension:0.3
-        }]
-      },
-
-      options:{
-
-        responsive:true,
-
-        maintainAspectRatio:false,
-
-        plugins:{
-
-          legend:{
-
-            labels:{
-              color:corTexto
-            }
-          }
-        },
-
-        scales:{
-
-          x:{
-
-            ticks:{
-              color:corTexto
-            },
-
-            grid:{
-              color:corGrid
-            }
-          },
-
-          y:{
-
-            ticks:{
-              color:corTexto
-            },
-
-            grid:{
-              color:corGrid
-            }
-          }
-        }
-      }
-    });
-
-  const datasetsCategorias =
-
-    categoriasPermitidas.map((cat,index)=>{
-
-      const indiceOriginal =
-        categorias.findIndex(
-          c =>
-            c.trim().toLowerCase() ===
-            cat.trim().toLowerCase()
-        );
-
-      return {
-
-        label:cat,
-
-        data:
-          rows.map(r =>
-
-            indiceOriginal >= 0
-              ? Number(
-                  r[indiceOriginal + 1]
-                ) || 0
-              : 0
-          ),
-
-        borderColor:
-          cores[index % cores.length],
-
-        backgroundColor:
-          cores[index % cores.length],
-
-        borderWidth:2,
-
-        tension:0.3,
-
-        hidden:false
-      };
-    });
-
-  categoriaChart =
-    new Chart(
-
-      document.getElementById(
-        "categoriaChart"
-      ),
-
-      {
-
-      type:"line",
-
-      data:{
-
-        labels:periodos,
-
-        datasets:datasetsCategorias
-      },
-
-      options:{
-
-        responsive:true,
-
-        maintainAspectRatio:false,
-
-        interaction:{
-
-          mode:"index",
-
-          intersect:false
-        },
-
-        plugins:{
-
-          legend:{
-            display:false
-          }
-        },
-
-        scales:{
-
-          x:{
-
-            ticks:{
-              color:corTexto
-            },
-
-            grid:{
-              color:corGrid
-            }
-          },
-
-          y:{
-
-            ticks:{
-              color:corTexto
-            },
-
-            grid:{
-              color:corGrid
-            }
-          }
-        }
-      }
-    });
-
-  criarFiltros();
-
-  pizzaChart =
-    new Chart(
-
-      document.getElementById(
-        "pizzaChart"
-      ),
-
-      {
-
-      type:"bar",
-
-      data:{
-
-        labels:
-          backlogFiltrado.map(
-            item => item.nome
-          ),
-
-        datasets:[{
-
-          label:
-            "Quantidade de OS",
-
-          data:backlogAtual,
-
-          backgroundColor:
-            backlogFiltrado.map(
-              item => item.cor
-            ),
-
-          borderRadius:6
-        }]
-      },
-
-      options:{
-
-        responsive:true,
-
-        maintainAspectRatio:false,
-
-        plugins:{
-
-          legend:{
-            display:false
-          }
-        },
-
-        scales:{
-
-          x:{
-
-            ticks:{
-              color:
-                darkMode
-                  ? "#f8fafc"
-                  : "#000000"
-            },
-
-            grid:{
-              color:corGrid
-            }
-          },
-
-          y:{
-
-            beginAtZero:true,
-
-            ticks:{
-              color:corTexto
-            },
-
-            grid:{
-              color:corGrid
-            }
-          }
-        }
-      }
-    });
-}
-
-function criarFiltros(){
-
-  const container =
-    document.getElementById(
-      "filtrosCategorias"
-    );
-
-  container.innerHTML = "";
-
-  categoriaChart
-    .data
-    .datasets
-    .forEach((dataset)=>{
-
-      const botao =
-        document.createElement(
-          "button"
-        );
-
-      botao.innerText =
-        dataset.label;
-
-      botao.classList.add(
-        "filtro-btn"
-      );
-
-      botao.style.backgroundColor =
-        dataset.borderColor;
-
-      botao.style.opacity = "1";
-
-      botao.onclick = () => {
-
-        dataset.hidden =
-          !dataset.hidden;
-
-        categoriaChart.update();
-
-        botao.style.opacity =
-          dataset.hidden
-            ? "0.35"
-            : "1";
-      };
-
-      container.appendChild(
-        botao
-      );
-    });
 }
 
 document
@@ -1083,15 +703,6 @@ document
         )
         .innerText =
           "🌙 Tema Escuro";
-    }
-
-    if(dadosGlobais.length > 0){
-
-      processarDados(
-        dadosGlobais
-      );
-
-      carregarPagina2();
     }
   });
 
