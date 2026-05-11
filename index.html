@@ -583,9 +583,21 @@ function processarDados(data){
       }
     });
 
-  const datasetsCategorias =
+  const categoriasPermitidas = [
 
-    categorias.map((cat,index)=>({
+  "Desob. De Ramal",
+  "Subst. De Ramal",
+  "Reparo de Ramal",
+  "Subst. Registro de Cavalete",
+  "Padronização Cavalete",
+  "Reparo de Cavalete",
+  "Retrabalho de Ramal"
+];
+
+const datasetsCategorias =
+
+  categorias
+    .map((cat,index)=>({
 
       label:cat,
 
@@ -608,7 +620,12 @@ function processarDados(data){
       tension:0.3,
 
       hidden:false
-    }));
+    }))
+    .filter(dataset =>
+      categoriasPermitidas.includes(
+        dataset.label
+      )
+    );
 
   categoriaChart =
     new Chart(
@@ -821,25 +838,6 @@ function criarFiltros(){
     .datasets
     .forEach((dataset,index)=>{
 
-      const categoriasPermitidas = [
-
-        "Desob. De Ramal",
-        "Subst. De Ramal",
-        "Reparo de Ramal",
-        "Subst. Registro de Cavalete",
-        "Padronização Cavalete",
-        "Reparo de Cavalete",
-        "Retrabalho de Ramal"
-      ];
-
-      if(
-        !categoriasPermitidas.includes(
-          dataset.label
-        )
-      ){
-        return;
-      }
-
       const botao =
         document.createElement(
           "button"
@@ -853,7 +851,7 @@ function criarFiltros(){
       );
 
       botao.style.backgroundColor =
-        cores[index % cores.length];
+        dataset.borderColor;
 
       botao.style.opacity = "1";
 
