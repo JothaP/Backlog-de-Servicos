@@ -189,12 +189,16 @@ async function carregarPagina2(){
     let maiorValor = -1, catCritica = "-";
 
     rows.forEach(r => {
-      const categoria = r[0];
+      const categoria = r[0] ? r[0].toString().trim() : "";
       const dp = Number(r[1]) || 0;
       const fp = Number(r[2]) || 0;
       const somaLinha = dp + fp;
 
-      if(categoria && categoria.toString().toLowerCase() !== "total geral") {
+      // Filtra: Ignora nulos, ignores "total geral" e ignora onde está escrito "vazio"
+      if(categoria && 
+         categoria.toLowerCase() !== "total geral" && 
+         categoria.toLowerCase() !== "vazio") {
+        
         totalDP += dp;
         totalFP += fp;
         totalGeral += somaLinha;
@@ -213,13 +217,11 @@ async function carregarPagina2(){
       }
     });
 
-    // Atualiza KPIs com dados da Página 2
     document.getElementById("quantidadeAtual").innerText = totalGeral;
     document.getElementById("osCritica").innerText = totalDP;
     document.getElementById("mediaGeral").innerText = totalFP;
     document.getElementById("categoriaCritica").innerText = catCritica;
 
-    // Gráfico de Distribuição (Barra Simples) - Agora usando dados da Página 2
     if(pizzaChart) pizzaChart.destroy();
     pizzaChart = new Chart(document.getElementById("pizzaChart"), {
       type: "bar",
@@ -242,7 +244,6 @@ async function carregarPagina2(){
       }
     });
 
-    // Gráfico Categoria x Prazo (Barras Agrupadas)
     if(planilha2Chart) planilha2Chart.destroy();
     planilha2Chart = new Chart(document.getElementById("planilha2Chart"), {
       type: "bar",
