@@ -132,3 +132,50 @@
     let corGrid = "rgba(255,255,255,0.1)";
 
     const cores = ["#3b82f6", "#ef4444", "#22c55e", "#eab308", "#a855f7", "#06b6d4", "#f97316", "#94a3b8"];
+    const categoriasPermitidas = [
+      "Desob. de Ramal", "Subst. de Ramal", "Reparo de Ramal",
+      "Subst. Registro Cavalete", "Reparo de Cavalete", "Padronização Cavalete",
+      "Retrabalho de Ramal", "Substituição de HD", "Deslocamento de Ligação"
+    ];
+
+    function parseCSV(text) {
+      let r = [];
+      let linhas = text.split(/\r?\n/);
+      if(linhas.length === 0 || linhas[0] === "") return [];
+      
+      let delimitador = linhas[0].split(';').length > linhas[0].split(',').length ? ';' : ',';
+
+      linhas.forEach(linha => {
+        if(linha.trim() === "") return;
+        let colunas = lineSplitter(linha, delimitador);
+        r.push(colunas);
+      });
+      return r;
+    }
+
+    function lineSplitter(linha, delimitador) {
+      let colunas = [];
+      let dentroAspas = false;
+      let colunaAtual = "";
+      
+      for (let i = 0; i < linha.length; i++) {
+        let char = linha[i];
+        if (char === '"') {
+          dentroAspas = !dentroAspas;
+        } else if (char === delimitador && !dentroAspas) {
+          colunas.push(colunaAtual.trim().replace(/^"|"$/g, ''));
+          colunaAtual = "";
+        } else {
+          colunaAtual += char;
+        }
+      }
+      colunas.push(colunaAtual.trim().replace(/^"|"$/g, ''));
+      return colunas;
+    }
+
+    document.getElementById("exportarPDF").addEventListener("click", async () => {
+      const elemento = document.getElementById("dashboardExport");
+      const canvas = await html2canvas(elemento, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4
