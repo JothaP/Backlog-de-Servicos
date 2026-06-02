@@ -190,122 +190,33 @@
     }
 
     // Busca dados da aba "Página2"
-    async function carregarAbaPrazo() {
-      try {
-        const sheetIdMatch = GOOGLE_SHEETS_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
-        if (!sheetIdMatch) return;
-        const sheetId = sheetIdMatch[1];
-        
-        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&sheet=P%C3%A1gina2`;
-        const res = await fetch(url);
-        if(!res.ok) throw new Error();
-        const text = await res.text();
-        
-        const rows = parseCSV(text);
-        processarAbaPrazo(rows);
-      } catch (e) {
-        document.getElementById("footerStatus").innerText += " | Aba 'Página2' não encontrada.";
-      }
+   async function carregarAbaPrazo() {
+  try {
+    const sheetIdMatch = GOOGLE_SHEETS_URL.match(/\/d\/([a-zA-Z0-9-_]+)/);
+
+    if (!sheetIdMatch) {
+      throw new Error("ID da planilha não encontrado");
     }
 
-    function processarAbaPrazo(rows) {
-  const categorias = [];
-  const dentroPrazo = [];
-  const foraPrazo = [];
+    const sheetId = sheetIdMatch[1];
 
-  let totalDP = 0;
-  let totalFP = 0;
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=1131018990`;
 
-  rows.forEach((r, idx) => {
-    // Ignora as duas primeiras linhas da tabela dinâmica
-    if (idx < 2 || !r || r.length < 3) return;
+    const res = await fetch(url);
 
-    const categoria = (r[0] || "").trim();
-
-    const dp = Number(
-      (r[1] || "0")
-        .toString()
-        .replace(/\./g, "")
-        .replace(",", ".")
-    ) || 0;
-
-    const fp = Number(
-      (r[2] || "0")
-        .toString()
-        .replace(/\./g, "")
-        .replace(",", ".")
-    ) || 0;
-
-    // Captura os totais da linha "Total Geral"
-    if (categoria.toLowerCase() === "total geral") {
-      totalDP = dp;
-      totalFP = fp;
-      return;
+    if (!res.ok) {
+      throw new Error(`Erro HTTP: ${res.status}`);
     }
 
-    // Alimenta o gráfico apenas com as categorias
-    categorias.push(categoria);
-    dentroPrazo.push(dp);
-    foraPrazo.push(fp);
-  });
+    const text = await res.text();
 
-  // Atualiza os cards com os valores da linha Total Geral
-  document.getElementById("osCritica").innerText = totalDP;
-  document.getElementById("mediaGeral").innerText = totalFP;
+    const rows = parseCSV(text);
 
-  // Atualiza o gráfico
-  if (planilha2Chart) planilha2Chart.destroy();
+    processarAbaPrazo(rows);
 
-  planilha2Chart = new Chart(document.getElementById("planilha2Chart"), {
-    type: "bar",
-    data: {
-      labels: categorias,
-      datasets: [
-        {
-          label: "Dentro do Prazo",
-          data: dentroPrazo,
-          backgroundColor: "#22c55e",
-          borderRadius: 5
-        },
-        {
-          label: "Fora do Prazo",
-          data: foraPrazo,
-          backgroundColor: "#ef4444",
-          borderRadius: 5
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: {
-            color: corTexto
-          }
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: {
-            color: corTexto
-          },
-          grid: {
-            color: corGrid
-          }
-        },
-        y: {
-          stacked: true,
-          beginAtZero: true,
-          ticks: {
-            color: corTexto
-          },
-          grid: {
-            color: corGrid
-          }
-        }
-      }
-    }
-  });
+  } catch (e) {
+    console.error(e);
+    document.getElementById("footerStatus").innerText +=
+      " | Erro ao carregar Página2";
+  }
 }
